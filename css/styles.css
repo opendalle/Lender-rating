@@ -981,6 +981,7 @@ body {
 }
 
 /* MOBILE RESPONSIVE */
+/* ── TABLET (1024px) ─────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   :root { --nav-width: 52px; }
   .sidebar-logo .logo-sub,
@@ -995,15 +996,207 @@ body {
   .dossier-panel { width: 100vw; }
 }
 
+/* ── MOBILE (768px and below) ────────────────────────────────────── */
 @media (max-width: 768px) {
-  :root { --nav-width: 0px; }
-  .sidebar { display: none; }
-  .terminal-shell { flex-direction: column; }
-  .page-content { padding: 12px; }
-  .topbar { padding: 0 12px; }
-  .metric-row { grid-template-columns: repeat(2, 1fr); }
-  .data-table { font-size: 11px; }
-  .data-table th, .data-table td { padding: 8px 8px; }
+  :root { --nav-width: 0px; --topbar-height: 48px; }
+
+  /* Kill sidebar entirely — replaced by bottom nav */
+  .sidebar { display: none !important; }
+
+  /* Stack layout vertically */
+  .terminal-shell { flex-direction: column; height: auto; min-height: 100vh; }
+  .main-content { height: auto; overflow: visible; }
+
+  /* Topbar — compact */
+  .topbar {
+    padding: 0 12px;
+    height: var(--topbar-height);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+  }
+  .topbar-title { font-size: 10px; }
+  .topbar-metrics { display: none; }
+  /* show just the Data Entry button in topbar on mobile */
+  .topbar .btn-primary { font-size: 10px; padding: 5px 10px; }
+
+  /* Page content — proper scroll */
+  .page-content {
+    padding: 10px;
+    overflow-y: auto;
+    /* account for bottom nav */
+    padding-bottom: 70px;
+  }
+
+  /* Single column everything */
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 10px; }
+  .grid-auto { grid-template-columns: 1fr; }
+
+  /* Stat cards — 2 per row on mobile */
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card { padding: 10px; }
+  .stat-value { font-size: 18px; }
+  .stat-label { font-size: 8px; }
+  .stat-sub { font-size: 9px; }
+
+  /* Panel headers */
+  .panel-header { padding: 10px 12px; }
+  .panel-body { padding: 10px; }
+  .panel-title { font-size: 9px; }
+
+  /* Metric chips */
+  .metric-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .metric-chip { padding: 8px 10px; }
+  .metric-chip .value { font-size: 13px; }
+
+  /* Heatmap — single column on small phones, 2-col on larger phones */
+  .portfolio-heat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+  .heat-card { padding: 10px; }
+  .heat-card-name { font-size: 11px; }
+
+  /* Tables — hide less important columns, make scrollable */
+  .data-table { font-size: 10px; }
+  .data-table th, .data-table td { padding: 6px 7px; white-space: nowrap; }
+  .panel > div[style*="overflow-x"] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Dossier — full screen */
+  .dossier-panel { width: 100vw; }
+  .dossier-title { font-size: 15px; }
+  .dossier-tab { padding: 8px 12px; font-size: 10px; }
+  .dossier-body { padding: 12px; }
+
+  /* Charts — shorter on mobile */
+  .chart-h-md { height: 180px; }
+  .chart-h-lg { height: 240px; }
+  .chart-h-xl { height: 280px; }
+
+  /* Buttons */
+  .btn-lg { padding: 9px 16px; font-size: 12px; }
+
+  /* Search results */
+  .search-results { position: fixed; top: var(--topbar-height); left: 0; right: 0; border-radius: 0; max-height: 60vh; }
+
+  /* Alert items */
+  .alert-item { padding: 10px 12px; }
+
+  /* Toast — full width on mobile */
+  .toast { left: 12px; right: 12px; bottom: 70px; max-width: none; }
+
+  /* Hide non-essential topbar items */
+  .topbar > *:not(.topbar-title):not(.btn-primary) { display: none; }
+  .topbar { justify-content: space-between; }
+}
+
+/* ── MOBILE BOTTOM NAV ──────────────────────────────────────────── */
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--bg-deep);
+    border-top: 1px solid var(--border-bright);
+    height: 58px;
+    align-items: stretch;
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 8px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--cyan);
+  }
+
+  .mobile-nav-item .mn-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .mobile-nav-item .mn-label {
+    font-size: 8px;
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 18px);
+    background: var(--red);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+  }
+
+  /* Hamburger menu button for more items */
+  .mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6,6,16,0.85);
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .mobile-menu-overlay.open { display: flex; }
+
+  .mobile-menu-sheet {
+    background: var(--bg-dark);
+    border-top: 1px solid var(--border-bright);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 0 80px;
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+
+  .mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-menu-item:last-child { border-bottom: none; }
+  .mobile-menu-item .mm-icon { font-size: 18px; width: 24px; text-align: center; }
+  .mobile-menu-item.active { color: var(--cyan); background: rgba(0,255,204,0.04); }
+  .mobile-menu-handle { width: 36px; height: 4px; background: var(--border-bright); border-radius: 2px; margin: 0 auto 16px; }
 }
 
 /* ANIMATIONS */
