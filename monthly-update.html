@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Monthly Monitoring Update</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.mu-header {
+  padding: 20px 28px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg-deep);
+}
+.mu-header h1 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.mu-header .sub { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+.mu-body { display: flex; height: calc(100vh - 64px); overflow: hidden; }
+
+.mu-sidebar {
+  width: 260px; min-width: 220px; border-right: 1px solid var(--border);
+  overflow-y: auto; background: var(--bg-deep); flex-shrink: 0;
+}
+.mu-sidebar-hd {
+  padding: 12px 16px; font-size: 9px; font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.proj-item {
+  padding: 10px 16px; cursor: pointer; border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.proj-item:hover { background: var(--bg-surface); }
+.proj-item.active { background: rgba(0,255,204,0.07); border-left: 3px solid var(--cyan); }
+.proj-item .pname { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.proj-item .pmeta { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+.dot-G { background: #00ff88; }
+.dot-A { background: #ffaa00; }
+.dot-R { background: #ff3355; }
+
+.mu-main { flex: 1; overflow-y: auto; padding: 24px 32px 60px; }
+
+.mu-no-project {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; gap: 10px;
+}
+.mu-no-project .ico { font-size: 36px; }
+
+.section-hd {
+  font-size: 9px; font-family: var(--font-mono); text-transform: uppercase;
+  letter-spacing: .12em; color: var(--text-muted); margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.section-hd .badge {
+  background: rgba(0,255,204,0.12); color: var(--cyan);
+  font-size: 8px; padding: 2px 7px; border-radius: 10px;
+}
+
+.form-block { margin-bottom: 32px; }
+.fg2 { display: grid; grid-template-columns: 1fr 1fr;     gap: 16px; }
+.fg3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.fg4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+
+.fl  { display: flex; flex-direction: column; gap: 5px; }
+.fl label {
+  font-size: 10px; font-family: var(--font-mono); color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.fl label .hint { font-size: 9px; color: var(--text-muted); text-transform: none; letter-spacing: 0; font-style: italic; display: block; }
+.fl label .tag  { font-size: 8px; background: rgba(255,170,0,.15); color: #ffaa00; padding: 1px 5px; border-radius: 8px; vertical-align: middle; margin-left: 4px; }
+.fl label .req  { color: var(--red); }
+.f-in {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-primary);
+  font-size: 12px; padding: 9px 12px; outline: none; width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+}
+.f-in:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,255,204,0.08); }
+.f-in.computed { background: rgba(0,255,204,0.04); border-color: rgba(0,255,204,0.2); color: var(--cyan); font-family: var(--font-mono); }
+
+/* Derived ratio cards */
+.ratio-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 28px; }
+.ratio-card {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px;
+}
+.ratio-card .rc-label { font-size: 9px; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.ratio-card .rc-value { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
+.ratio-card .rc-desc  { font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.ratio-card .rc-status { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+
+.val-G { color: #00ff88; }
+.val-A { color: #ffaa00; }
+.val-R { color: #ff3355; }
+.val-N { color: var(--text-muted); }
+
+/* ECL block */
+.ecl-block {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; margin-bottom: 28px;
+}
+.ecl-block .ecl-title { font-size: 11px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+.ecl-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; }
+.ecl-item .ei-label { font-size: 9px; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.ecl-item .ei-value { font-size: 16px; font-weight: 700; font-family: var(--font-mono); }
+.ecl-item .ei-sub   { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+/* Action bar */
+.action-bar {
+  position: sticky; bottom: 0; background: var(--bg-deep);
+  border-top: 1px solid var(--border); padding: 14px 32px;
+  display: flex; align-items: center; gap: 12px;
+}
+.btn-primary {
+  background: var(--cyan); color: #000; border: none; border-radius: 6px;
+  padding: 9px 22px; font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-mono); letter-spacing: .04em; transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-ghost {
+  background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
+  border-radius: 6px; padding: 9px 18px; font-size: 12px; cursor: pointer;
+  font-family: var(--font-mono); transition: border-color .15s;
+}
+.btn-ghost:hover { border-color: var(--text-secondary); }
+.save-msg { font-size: 11px; font-family: var(--font-mono); color: var(--green); display: none; }
+
+/* Info tooltip */
+.info-tip { display: inline-block; width: 14px; height: 14px; background: rgba(0,255,204,.15); border-radius: 50%; font-size: 9px; color: var(--cyan); text-align: center; line-height: 14px; cursor: help; margin-left: 4px; position: relative; }
+.info-tip:hover::after {
+  content: attr(data-tip); position: absolute; left: 18px; top: -2px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 12px; font-size: 10px; color: var(--text-primary); white-space: nowrap;
+  z-index: 100; min-width: 220px; line-height: 1.5; pointer-events: none;
+}
+
+.period-banner {
+  background: rgba(0,255,204,0.06); border: 1px solid rgba(0,255,204,0.2);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 20px;
+  font-size: 11px; font-family: var(--font-mono); color: var(--cyan);
+  display: flex; align-items: center; gap: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="brand-nexus">NEXUS</span><span class="brand-asia">ASIA</span>
+  </div>
+  <nav class="topbar-nav">
+    <a href="index.html">Dashboard</a>
+    <a href="entry.html">Entry</a>
+    <a href="monthly-update.html" class="active">Monthly Update</a>
+    <a href="covenants.html">Covenants</a>
+    <a href="stress.html">Stress</a>
+    <a href="waterfall.html">Waterfall</a>
+    <a href="vault.html">Vault</a>
+    <a href="audit.html">Audit</a>
+  </nav>
+</div>
+
+<div class="mu-header">
+  <div>
+    <h1>Monthly Monitoring Update</h1>
+    <div class="sub">Enter actuals each month — drives all 8 credit formulas in the scoring engine</div>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+    <select id="periodSel" class="f-in" style="width:160px;padding:7px 10px;font-family:var(--font-mono);font-size:11px;">
+    </select>
+  </div>
+</div>
+
+<div class="mu-body">
+  <!-- Sidebar: project list -->
+  <div class="mu-sidebar">
+    <div class="mu-sidebar-hd">Select Project</div>
+    <div id="projList"></div>
+  </div>
+
+  <!-- Main form -->
+  <div class="mu-main" id="muMain">
+    <div class="mu-no-project" id="noProject">
+      <div class="ico">📋</div>
+      <div>Select a project from the left to enter monthly actuals</div>
+    </div>
+
+    <div id="muForm" style="display:none;">
+      <div class="period-banner" id="periodBanner">
+        📅 Updating period: <strong id="bannerPeriod">—</strong> &nbsp;·&nbsp; Project: <strong id="bannerProj">—</strong>
+      </div>
+
+      <!-- SECTION 1: Collections & Cash -->
+      <div class="form-block">
+        <div class="section-hd">💰 Collections & Cash Flow <span class="badge">Formulas 1 · 5</span>
+          <span class="info-tip" data-tip="Drives Collection Efficiency Ratio and Escrow Velocity — earliest warning signals">i</span>
+        </div>
+        <div class="fg3">
+          <div class="fl">
+            <label>Actual Collections This Month (₹Cr) <span class="req">*</span>
+              <span class="hint">Total ₹ received from buyers this calendar month</span>
+            </label>
+            <input class="f-in" id="f_actualCollections" type="number" step="0.01" placeholder="e.g. 8.70" />
+          </div>
+          <div class="fl">
+            <label>Escrow Balance — Current (₹Cr) <span class="req">*</span>
+              <span class="hint">Month-end balance in RERA escrow account</span>
+            </label>
+            <input class="f-in" id="f_escrowBalance" type="number" step="0.01" placeholder="e.g. 28.50" />
+          </div>
+          <div class="fl">
+            <label>Escrow Balance — Prior Month (₹Cr) <span class="req">*</span>
+              <span class="hint">Last month's closing balance (for Escrow Velocity)</span>
+            </label>
+            <input class="f-in" id="f_escrowPrev" type="number" step="0.01" placeholder="e.g. 26.80" />
+          </div>
+        </div>
+        <div class="fg2" style="margin-top:14px;">
+          <div class="fl">
+            <label>Escrow Required (₹Cr)
+              <span class="hint">Minimum RERA-mandated escrow balance this period</span>
+            </label>
+            <input class="f-in" id="f_escrowRequired" type="number" step="0.01" placeholder="e.g. 18.00" />
+          </div>
+          <div class="fl">
+            <label>EBITDA — Annualised (₹Cr) <span class="tag">ICR Formula 7</span>
+              <span class="hint">Project-level EBITDA (annualised). Used for ICR = EBITDA ÷ Annual Interest</span>
+            </label>
+            <input class="f-in" id="f_ebitda" type="number" step="0.01" placeholder="e.g. 18.90" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Sales & Inventory -->
+      <div class="form-block">
+        <div class="section-hd">🏠 Sales & Inventory <span class="badge">Formulas 2 · 3</span>
+          <span class="info-tip" data-tip="Drives Months-to-Sell-Out and Unsold Inventory Cover — structural repayment tests">i</span>
+        </div>
+        <div class="fg4">
+          <div class="fl">
+            <label>Units Sold (Cumulative) <span class="req">*</span></label>
+            <input class="f-in" id="f_unitsSold" type="number" placeholder="e.g. 98" />
+          </div>
+          <div class="fl">
+            <label>Total Units in Project</label>
+            <input class="f-in computed" id="f_totalUnits" type="number" readonly />
+          </div>
+          <div class="fl">
+            <label>Monthly Sales Velocity <span class="req">*</span>
+              <span class="hint">Units sold in current month only</span>
+            </label>
+            <input class="f-in" id="f_salesVelocity" type="number" placeholder="e.g. 6" />
+          </div>
+          <div class="fl">
+            <label>Sales Target (Monthly)</label>
+            <input class="f-in computed" id="f_salesTarget" type="number" readonly />
+          </div>
+        </div>
+        <div class="fg3" style="margin-top:14px;">
+          <div class="fl">
+            <label>Average Unit Price (₹Cr) <span class="tag">Required for UIC</span>
+              <span class="hint">Current average realisation per unit</span>
+            </label>
+            <input class="f-in" id="f_avgUnitPrice" type="number" step="0.01" placeholder="e.g. 2.40" />
+          </div>
+          <div class="fl">
+            <label>GDV at Launch Price (₹Cr)
+              <span class="hint">Total project value if 100% sold at launch rates</span>
+            </label>
+            <input class="f-in" id="f_gdv" type="number" step="0.01" placeholder="e.g. 528.00" />
+          </div>
+          <div class="fl">
+            <label>Outstanding Loan (₹Cr)
+              <span class="hint">Current principal outstanding (auto-filled from loan)</span>
+            </label>
+            <input class="f-in computed" id="f_outstanding" type="number" step="0.01" readonly />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Construction & Funding -->
+      <div class="form-block">
+        <div class="section-hd">🏗 Construction & Funding <span class="badge">Formulas 4 · 6</span>
+          <span class="info-tip" data-tip="Drives Cost-to-Complete Ratio (funding gap) and Liquidation-Adjusted Equity Cushion">i</span>
+        </div>
+        <div class="fg4">
+          <div class="fl">
+            <label>Construction Progress (%) <span class="req">*</span></label>
+            <input class="f-in" id="f_constructionProgress" type="number" min="0" max="100" placeholder="e.g. 42" />
+          </div>
+          <div class="fl">
+            <label>Scheduled Progress (%)</label>
+            <input class="f-in computed" id="f_scheduledProgress" type="number" readonly />
+          </div>
+          <div class="fl">
+            <label>Cost to Complete (₹Cr) <span class="req">*</span>
+              <span class="hint">Remaining construction cost per latest QS report</span>
+            </label>
+            <input class="f-in" id="f_costToComplete" type="number" step="0.01" placeholder="e.g. 138.00" />
+          </div>
+          <div class="fl">
+            <label>Cost Overrun (%)
+              <span class="hint">Current overrun vs original project cost</span>
+            </label>
+            <input class="f-in" id="f_costOverrun" type="number" step="0.1" placeholder="e.g. 26.4" />
+          </div>
+        </div>
+        <div class="fg3" style="margin-top:14px;">
+          <div class="fl">
+            <label>Sanctioned Amount (₹Cr)</label>
+            <input class="f-in computed" id="f_sanctioned" type="number" step="0.01" readonly />
+          </div>
+          <div class="fl">
+            <label>Disbursed to Date (₹Cr)
+              <span class="hint">Total drawn from facility as of this month</span>
+            </label>
+            <input class="f-in" id="f_disbursed" type="number" step="0.01" placeholder="e.g. 158.00" />
+          </div>
+          <div class="fl">
+            <label>Distress Haircut Override
+              <span class="hint">Default 0.65 (65p/₹). Override for specific asset types.</span>
+            </label>
+            <input class="f-in" id="f_distressHaircut" type="number" step="0.01" min="0.3" max="0.95" placeholder="0.65" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Financial Ratios -->
+      <div class="form-block">
+        <div class="section-hd">📊 Financial Ratios <span class="badge">Scoring Engine Inputs</span></div>
+        <div class="fg4">
+          <div class="fl">
+            <label>DSCR <span class="req">*</span>
+              <span class="hint">Debt Service Coverage Ratio (actual, not projected)</span>
+            </label>
+            <input class="f-in" id="f_dscr" type="number" step="0.01" placeholder="e.g. 0.82" />
+          </div>
+          <div class="fl">
+            <label>LTV (%)
+              <span class="hint">Loan-to-Value based on current independent valuation</span>
+            </label>
+            <input class="f-in" id="f_ltv" type="number" step="0.1" placeholder="e.g. 88" />
+          </div>
+          <div class="fl">
+            <label>LTC (%)
+              <span class="hint">Loan-to-Cost at current disbursed amount</span>
+            </label>
+            <input class="f-in" id="f_ltc" type="number" step="0.1" placeholder="e.g. 91" />
+          </div>
+          <div class="fl">
+            <label>Loan Status</label>
+            <select class="f-in" id="f_loanStatus">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="WATCH">WATCH</option>
+              <option value="NPA">NPA</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Live Derived Ratios -->
+      <div class="form-block">
+        <div class="section-hd">⚡ Live Credit Ratios — All 8 Formulas</div>
+        <div class="ratio-grid" id="ratioGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- ECL Block -->
+        <div class="ecl-block" id="eclBlock">
+          <div class="ecl-title">📋 Expected Credit Loss (IND AS 109) — Provisioning Estimate</div>
+          <div class="ecl-grid" id="eclGrid">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /muForm -->
+  </div><!-- /mu-main -->
+</div><!-- /mu-body -->
+
+<!-- Action bar (sticky) -->
+<div class="action-bar" id="actionBar" style="display:none;">
+  <button class="btn-primary" onclick="saveUpdate()">💾 Save Monthly Update</button>
+  <button class="btn-ghost" onclick="recalculate()">🔄 Recalculate</button>
+  <span class="save-msg" id="saveMsg">✓ Saved to local store</span>
+  <div style="margin-left:auto;font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">
+    Score updates on recalculate · Connect Supabase to persist
+  </div>
+</div>
+
+<script src="data/seed-data.js"></script>
+<script src="js/scoring-engine.js"></script>
+<script>
+// ── Period options ──────────────────────────────────────────────────────────
+function buildPeriods() {
+  const sel = document.getElementById('periodSel');
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = d.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+    const val   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const opt   = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+// ── Project list ────────────────────────────────────────────────────────────
+let activeProject = null;
+
+function buildProjectList() {
+  const list = document.getElementById('projList');
+  NEXUS_DATA.projects.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'proj-item';
+    div.dataset.id = p.id;
+    const dotClass = p.alertLevel === 'GREEN' ? 'dot-G' : p.alertLevel === 'AMBER' ? 'dot-A' : 'dot-R';
+    div.innerHTML = `
+      <div class="pname"><span class="dot ${dotClass}"></span>${p.name}</div>
+      <div class="pmeta">${p.id} · ${p.city}</div>
+    `;
+    div.onclick = () => selectProject(p.id);
+    list.appendChild(div);
+  });
+}
+
+function selectProject(id) {
+  document.querySelectorAll('.proj-item').forEach(el => el.classList.remove('active'));
+  const el = document.querySelector(`.proj-item[data-id="${id}"]`);
+  if (el) el.classList.add('active');
+
+  const project = NEXUS_DATA.projects.find(p => p.id === id);
+  const loan    = NEXUS_DATA.loans.find(l => l.projectId === id);
+  if (!project) return;
+
+  activeProject = { project, loan };
+
+  document.getElementById('noProject').style.display = 'none';
+  document.getElementById('muForm').style.display = 'block';
+  document.getElementById('actionBar').style.display = 'flex';
+
+  const period  = document.getElementById('periodSel').value;
+  const pLabel  = document.getElementById('periodSel').selectedOptions[0].textContent;
+  document.getElementById('bannerPeriod').textContent = pLabel;
+  document.getElementById('bannerProj').textContent   = project.name;
+
+  // Try load saved values from localStorage
+  const saved = loadSaved(id, period);
+  populateForm(project, loan, saved);
+  recalculate();
+}
+
+function populateForm(p, loan, saved) {
+  const cr = v => saved?.[v] ?? '';
+  const pr = v => saved?.[v] ?? (p[v] ?? '');
+
+  // Computed (read-only from project/loan)
+  document.getElementById('f_totalUnits').value         = p.totalUnits ?? '';
+  document.getElementById('f_salesTarget').value        = p.salesTarget ?? '';
+  document.getElementById('f_scheduledProgress').value  = p.scheduledProgress ?? '';
+  document.getElementById('f_sanctioned').value         = loan ? (loan.sanctionedAmount / 10000000).toFixed(2) : '';
+  document.getElementById('f_outstanding').value        = loan ? (loan.outstandingAmount / 10000000).toFixed(2) : '';
+
+  // Editable (load from saved, fallback to project seed)
+  const toC  = v => v ? (v / 10000000).toFixed(2) : '';
+  const fromC = v => (saved?.[v] !== undefined ? saved[v] : (p[v] !== undefined ? (p[v] / 10000000).toFixed(2) : ''));
+
+  document.getElementById('f_actualCollections').value    = fromC('actualCollections');
+  document.getElementById('f_escrowBalance').value        = fromC('escrowBalance');
+  document.getElementById('f_escrowPrev').value           = fromC('escrowPrev');
+  document.getElementById('f_escrowRequired').value       = fromC('escrowRequired');
+  document.getElementById('f_ebitda').value               = fromC('ebitda');
+  document.getElementById('f_unitsSold').value            = saved?.unitsSold ?? p.unitsSold ?? '';
+  document.getElementById('f_salesVelocity').value        = saved?.salesVelocity ?? p.salesVelocity ?? '';
+  document.getElementById('f_avgUnitPrice').value         = saved?.avgUnitPrice ?? (p.avgUnitPrice ? (p.avgUnitPrice/10000000).toFixed(2) : '');
+  document.getElementById('f_gdv').value                  = saved?.gdv ?? (p.gdv ? (p.gdv/10000000).toFixed(2) : '');
+  document.getElementById('f_constructionProgress').value = saved?.constructionProgress ?? p.constructionProgress ?? '';
+  document.getElementById('f_costToComplete').value       = fromC('costToComplete');
+  document.getElementById('f_costOverrun').value          = saved?.costOverrun ?? p.costOverrun ?? '';
+  document.getElementById('f_disbursed').value            = loan ? (saved?.disbursed ?? (loan.disbursedAmount/10000000).toFixed(2)) : '';
+  document.getElementById('f_distressHaircut').value      = saved?.distressHaircut ?? p.distressHaircut ?? '';
+  document.getElementById('f_dscr').value                 = saved?.dscr ?? p.dscr ?? '';
+  document.getElementById('f_ltv').value                  = saved?.ltv ?? p.ltv ?? '';
+  document.getElementById('f_ltc').value                  = saved?.ltc ?? p.ltc ?? '';
+  document.getElementById('f_loanStatus').value           = saved?.loanStatus ?? loan?.status ?? 'ACTIVE';
+}
+
+// ── Recalculate — build snapshot from form, run engine ───────────────────────
+function recalculate() {
+  if (!activeProject) return;
+  const { project: origP, loan: origL } = activeProject;
+
+  const crore = id => {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return isNaN(v) ? undefined : v * 10000000;
+  };
+  const num = id => {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return isNaN(v) ? undefined : v;
+  };
+
+  // Build patched project and loan from form inputs
+  const p = {
+    ...origP,
+    actualCollections:    crore('f_actualCollections'),
+    escrowBalance:        crore('f_escrowBalance'),
+    escrowPrev:           crore('f_escrowPrev'),
+    escrowRequired:       crore('f_escrowRequired'),
+    ebitda:               crore('f_ebitda'),
+    unitsSold:            num('f_unitsSold')            ?? origP.unitsSold,
+    salesVelocity:        num('f_salesVelocity')        ?? origP.salesVelocity,
+    avgUnitPrice:         (crore('f_avgUnitPrice')),
+    gdv:                  (crore('f_gdv')),
+    constructionProgress: num('f_constructionProgress') ?? origP.constructionProgress,
+    costToComplete:       crore('f_costToComplete'),
+    costOverrun:          num('f_costOverrun')           ?? origP.costOverrun,
+    distressHaircut:      num('f_distressHaircut')       ?? 0.65,
+    dscr:                 num('f_dscr')                  ?? origP.dscr,
+    ltv:                  num('f_ltv')                   ?? origP.ltv,
+    ltc:                  num('f_ltc')                   ?? origP.ltc,
+  };
+
+  const disbursedAmt = crore('f_disbursed');
+  const l = origL ? {
+    ...origL,
+    disbursedAmount: disbursedAmt ?? origL.disbursedAmount,
+    status: document.getElementById('f_loanStatus').value || origL.status
+  } : null;
+
+  const developer = NEXUS_DATA.developers.find(d => d.id === origP.developerId);
+  const result    = RiskEngine.computeScore(p, developer, l, NEXUS_DATA.marketData);
+
+  renderRatios(result.derivedRatios);
+  renderECL(result.derivedRatios?.ecl);
+  renderScoreBadge(result);
+}
+
+function renderRatios(dr) {
+  const grid = document.getElementById('ratioGrid');
+  if (!dr) { grid.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">Enter data above to compute ratios</div>'; return; }
+
+  const cards = [
+    { key: 'collectionEfficiency',    emoji: '💳' },
+    { key: 'monthsToSellOut',         emoji: '📅' },
+    { key: 'unsoldInventoryCover',     emoji: '🏠' },
+    { key: 'costToComplete',          emoji: '🏗' },
+    { key: 'escrowVelocity',          emoji: '🔄' },
+    { key: 'liquidationEquityCushion',emoji: '💧' },
+    { key: 'icr',                     emoji: '📈' },
+  ];
+
+  grid.innerHTML = cards.map(({ key, emoji }) => {
+    const r = dr[key];
+    if (!r) return '';
+    const displayVal = r.value != null ? RiskEngine.formatRatio(r.value, r.format) : '—';
+    const cls = r.status === 'GREEN' ? 'val-G' : r.status === 'AMBER' ? 'val-A' : r.status === 'RED' ? 'val-R' : 'val-N';
+    let extra = '';
+    if (key === 'monthsToSellOut' && r.monthsLeft != null) {
+      extra = `<div class="rc-desc" style="margin-top:4px;">Loan tenure left: ${r.monthsLeft.toFixed(0)} mo · <span class="${cls}">${r.signal || '—'}</span></div>`;
+    }
+    return `
+      <div class="ratio-card">
+        <div class="rc-label">${emoji} ${r.label}</div>
+        <div class="rc-value ${cls}">${displayVal}</div>
+        ${extra}
+        <div class="rc-desc">${r.description}</div>
+        <div class="rc-status ${cls}">● ${r.status}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderECL(ecl) {
+  const grid = document.getElementById('eclGrid');
+  if (!ecl || ecl.value == null) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">Enter DSCR and loan data to compute ECL provisioning</div>';
+    return;
+  }
+  const stageLabel = RiskEngine.eclStageLabel(ecl.stage);
+  const stageColor = ecl.status === 'GREEN' ? '#00ff88' : ecl.status === 'AMBER' ? '#ffaa00' : '#ff3355';
+  grid.innerHTML = `
+    <div class="ecl-item">
+      <div class="ei-label">ECL Amount</div>
+      <div class="ei-value" style="color:${stageColor}">${RiskEngine.formatRatio(ecl.value,'crore')}</div>
+      <div class="ei-sub">Provision required</div>
+    </div>
+    <div class="ecl-item">
+      <div class="ei-label">PD (Prob of Default)</div>
+      <div class="ei-value" style="color:${stageColor}">${(ecl.pd*100).toFixed(0)}%</div>
+      <div class="ei-sub">Score-derived</div>
+    </div>
+    <div class="ecl-item">
+      <div class="ei-label">LGD (Loss Given Default)</div>
+      <div class="ei-value">${(ecl.lgd*100).toFixed(0)}%</div>
+      <div class="ei-sub">= 1 − Recovery Rate</div>
+    </div>
+    <div class="ecl-item">
+      <div class="ei-label">EAD (Exposure)</div>
+      <div class="ei-value">${RiskEngine.formatRatio(ecl.ead,'crore')}</div>
+      <div class="ei-sub">Outstanding loan</div>
+    </div>
+    <div class="ecl-item">
+      <div class="ei-label">IND AS 109 Stage</div>
+      <div class="ei-value" style="color:${stageColor};font-size:13px;">${ecl.stage}</div>
+      <div class="ei-sub">${stageLabel}</div>
+    </div>
+  `;
+}
+
+function renderScoreBadge(result) {
+  // Could update a floating badge — kept minimal for now
+}
+
+// ── Save / Load ─────────────────────────────────────────────────────────────
+function saveUpdate() {
+  if (!activeProject) return;
+  const { project } = activeProject;
+  const period = document.getElementById('periodSel').value;
+
+  const data = {
+    actualCollections:    document.getElementById('f_actualCollections').value,
+    escrowBalance:        document.getElementById('f_escrowBalance').value,
+    escrowPrev:           document.getElementById('f_escrowPrev').value,
+    escrowRequired:       document.getElementById('f_escrowRequired').value,
+    ebitda:               document.getElementById('f_ebitda').value,
+    unitsSold:            document.getElementById('f_unitsSold').value,
+    salesVelocity:        document.getElementById('f_salesVelocity').value,
+    avgUnitPrice:         document.getElementById('f_avgUnitPrice').value,
+    gdv:                  document.getElementById('f_gdv').value,
+    constructionProgress: document.getElementById('f_constructionProgress').value,
+    costToComplete:       document.getElementById('f_costToComplete').value,
+    costOverrun:          document.getElementById('f_costOverrun').value,
+    disbursed:            document.getElementById('f_disbursed').value,
+    distressHaircut:      document.getElementById('f_distressHaircut').value,
+    dscr:                 document.getElementById('f_dscr').value,
+    ltv:                  document.getElementById('f_ltv').value,
+    ltc:                  document.getElementById('f_ltc').value,
+    loanStatus:           document.getElementById('f_loanStatus').value,
+    savedAt:              new Date().toISOString()
+  };
+
+  const key = `nexus_mu_${project.id}_${period}`;
+  localStorage.setItem(key, JSON.stringify(data));
+
+  const msg = document.getElementById('saveMsg');
+  msg.style.display = 'inline';
+  setTimeout(() => { msg.style.display = 'none'; }, 3000);
+
+  recalculate();
+}
+
+function loadSaved(projectId, period) {
+  const key = `nexus_mu_${projectId}_${period}`;
+  try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
+}
+
+// ── Wire up live recalculate on input ────────────────────────────────────────
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('f-in') && !e.target.readOnly) {
+    recalculate();
+  }
+});
+document.getElementById('periodSel').addEventListener('change', () => {
+  if (activeProject) selectProject(activeProject.project.id);
+});
+
+buildPeriods();
+buildProjectList();
+</script>
+</body>
+</html>
