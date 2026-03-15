@@ -17,6 +17,13 @@
   gap: 10px;
 }
 
+@media (max-width: 768px) {
+  .portfolio-heat-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
 .heat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -266,7 +273,8 @@
       <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
       <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
       <div class="nav-section-label">Operations</div>
-      <a class="nav-item" onclick="openUploadModal()"><span class="nav-icon">↑</span><span>Data Ingest</span></a>
+      <a class="nav-item" href="entry.html"><span class="nav-icon">✏️</span><span>Data Entry</span></a>
+      <a class="nav-item" onclick="openUploadModal()"><span class="nav-icon">↑</span><span>Quick Ingest</span></a>
       <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
       <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
       <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
@@ -308,11 +316,29 @@
           <span class="label">GREEN</span>
           <span class="value green" id="tb-green">0</span>
         </div>
-        <button class="btn btn-sm btn-primary" onclick="openUploadModal()">+ Ingest Data</button>
+        <a href="entry.html" class="btn btn-sm btn-primary">✏️ Data Entry</a>
       </div>
     </div>
 
-    <!-- PAGE CONTENT -->
+    <!-- MOBILE SEARCH BAR (shown only on phones) -->
+    <div id="mobileSearchBar" style="display:none;padding:8px 10px;background:var(--bg-deep);border-bottom:1px solid var(--border)">
+      <div class="search-input-wrap" style="position:relative">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px">⌕</span>
+        <input type="text" class="search-input" style="width:100%;padding-left:30px" placeholder="Search projects, developers, cities…" id="mobileSearch" autocomplete="off">
+      </div>
+    </div>
+
+    <script>
+    // Show mobile search bar on small screens
+    if (window.innerWidth <= 768) {
+      document.getElementById('mobileSearchBar').style.display = 'block';
+      // Wire mobile search to same handler
+      document.getElementById('mobileSearch').addEventListener('input', function() {
+        document.getElementById('globalSearch').value = this.value;
+        document.getElementById('globalSearch').dispatchEvent(new Event('input'));
+      });
+    }
+    </script>
     <div class="page-content">
 
       <!-- PORTFOLIO PAGE -->
@@ -1600,6 +1626,52 @@ function processUpload() {
     setTimeout(() => closeModal('uploadModal'), 2000);
   }, 1500);
 }
+</script>
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav" id="mobileNav">
+  <a class="mobile-nav-item active" data-page="portfolio" onclick="showPage('portfolio');setMobileActive(this)">
+    <span class="mn-icon">⬡</span><span class="mn-label">Portfolio</span>
+  </a>
+  <a class="mobile-nav-item" data-page="projects" onclick="showPage('projects');setMobileActive(this)">
+    <span class="mn-icon">◫</span><span class="mn-label">Projects</span>
+  </a>
+  <a class="mobile-nav-item" data-page="alerts" onclick="showPage('alerts');setMobileActive(this)">
+    <span class="mn-icon">⚠</span><span class="mn-label">Alerts</span>
+    <span class="mobile-nav-badge" id="mnAlertBadge">4</span>
+  </a>
+  <a class="mobile-nav-item" href="entry.html">
+    <span class="mn-icon">✏️</span><span class="mn-label">Entry</span>
+  </a>
+  <a class="mobile-nav-item" onclick="openMobileMenu()">
+    <span class="mn-icon">☰</span><span class="mn-label">More</span>
+  </a>
+</nav>
+
+<!-- MOBILE MORE MENU -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenuOnBg(event)">
+  <div class="mobile-menu-sheet">
+    <div class="mobile-menu-handle"></div>
+    <a class="mobile-menu-item" href="covenants.html"><span class="mm-icon">📋</span>Covenants</a>
+    <a class="mobile-menu-item" href="waterfall.html"><span class="mm-icon">⧫</span>Capital Stack</a>
+    <a class="mobile-menu-item" href="stress.html"><span class="mm-icon">⚡</span>Stress Test</a>
+    <a class="mobile-menu-item" href="schedule.html"><span class="mm-icon">📅</span>Repayment Schedule</a>
+    <a class="mobile-menu-item" data-page="developers" onclick="showPage('developers');setMobileActive(null);closeMobileMenu()"><span class="mm-icon">⊙</span>Developers</a>
+    <a class="mobile-menu-item" data-page="markets" onclick="showPage('markets');setMobileActive(null);closeMobileMenu()"><span class="mm-icon">◈</span>Markets</a>
+    <a class="mobile-menu-item" data-page="reports" onclick="showPage('reports');setMobileActive(null);closeMobileMenu()"><span class="mm-icon">⊟</span>Reports</a>
+    <a class="mobile-menu-item" href="vault.html"><span class="mm-icon">🗄</span>Document Vault</a>
+    <a class="mobile-menu-item" href="audit.html"><span class="mm-icon">🔍</span>Audit Trail</a>
+    <a class="mobile-menu-item" href="deploy.html"><span class="mm-icon">🚀</span>Deploy Guide</a>
+  </div>
+</div>
+
+<script>
+function setMobileActive(el) {
+  document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+function openMobileMenu() { document.getElementById('mobileMenuOverlay').classList.add('open'); }
+function closeMobileMenu() { document.getElementById('mobileMenuOverlay').classList.remove('open'); }
+function closeMobileMenuOnBg(e) { if (e.target === document.getElementById('mobileMenuOverlay')) closeMobileMenu(); }
 </script>
 </body>
 </html>

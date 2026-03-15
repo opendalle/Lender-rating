@@ -8,16 +8,15 @@
 <style>
 /* ── TABS ── */
 .entry-tabs {
-  display: flex;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--border);
   background: var(--bg-deep);
-  overflow-x: auto;
   flex-shrink: 0;
 }
 .entry-tab {
-  padding: 12px 20px;
-  font-size: 11px;
+  padding: 10px 8px;
+  font-size: 10px;
   font-family: var(--font-mono);
   font-weight: 500;
   color: var(--text-muted);
@@ -26,11 +25,35 @@
   transition: all 0.15s;
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   user-select: none;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .entry-tab:hover  { color: var(--text-primary); background: var(--bg-surface); }
 .entry-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); background: var(--bg-dark); }
+
+/* Priority tabs - row 1 (most used) */
+.entry-tab.priority { grid-column: auto; }
+
+@media (max-width: 768px) {
+  .entry-tabs {
+    grid-template-columns: repeat(4, 1fr);
+    overflow: visible;
+  }
+  .entry-tab {
+    padding: 9px 4px;
+    font-size: 9px;
+    letter-spacing: 0.03em;
+  }
+  /* Hide emoji on mobile to save space */
+  .entry-tab .tab-emoji { display: none; }
+  .entry-layout { flex-direction: column !important; }
+  .entry-preview { display: none !important; }
+  .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+  .range-wrap { flex-wrap: nowrap; }
+}
 
 /* ── FORMS ── */
 .form-section { margin-bottom: 28px; }
@@ -257,14 +280,14 @@
 
     <!-- TAB BAR -->
     <div class="entry-tabs" id="entryTabs">
-      <div class="entry-tab active"  data-tab="monthly"     onclick="switchTab('monthly',this)">📊 Monthly Update</div>
-      <div class="entry-tab"         data-tab="construction" onclick="switchTab('construction',this)">🏗 Construction</div>
-      <div class="entry-tab"         data-tab="sales"        onclick="switchTab('sales',this)">🏠 Sales</div>
-      <div class="entry-tab"         data-tab="financial"    onclick="switchTab('financial',this)">💰 Financial</div>
-      <div class="entry-tab"         data-tab="newproject"   onclick="switchTab('newproject',this)">➕ New Project</div>
-      <div class="entry-tab"         data-tab="newloan"      onclick="switchTab('newloan',this)">💳 New Loan</div>
-      <div class="entry-tab"         data-tab="developer"    onclick="switchTab('developer',this)">👤 Developer</div>
-      <div class="entry-tab"         data-tab="csv"          onclick="switchTab('csv',this)">📂 CSV Upload</div>
+      <div class="entry-tab active priority" data-tab="monthly"      onclick="switchTab('monthly',this)"><span class="tab-emoji">📊 </span>Monthly Update</div>
+      <div class="entry-tab priority"         data-tab="construction" onclick="switchTab('construction',this)"><span class="tab-emoji">🏗 </span>Construction</div>
+      <div class="entry-tab priority"         data-tab="sales"        onclick="switchTab('sales',this)"><span class="tab-emoji">🏠 </span>Sales</div>
+      <div class="entry-tab priority"         data-tab="financial"    onclick="switchTab('financial',this)"><span class="tab-emoji">💰 </span>Financial</div>
+      <div class="entry-tab"                  data-tab="newproject"   onclick="switchTab('newproject',this)"><span class="tab-emoji">➕ </span>New Project</div>
+      <div class="entry-tab"                  data-tab="newloan"      onclick="switchTab('newloan',this)"><span class="tab-emoji">💳 </span>New Loan</div>
+      <div class="entry-tab"                  data-tab="developer"    onclick="switchTab('developer',this)"><span class="tab-emoji">👤 </span>Developer</div>
+      <div class="entry-tab"                  data-tab="csv"          onclick="switchTab('csv',this)"><span class="tab-emoji">📂 </span>CSV Upload</div>
     </div>
 
     <div class="page-content">
