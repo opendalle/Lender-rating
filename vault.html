@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Document Vault</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>DOCUMENT VAULT</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-sm btn-primary" onclick="openUpload()">↑ Upload Document</button>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+
+      <div class="stat-grid" id="vaultStats"></div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" class="form-input" style="max-width:280px" id="docSearch" placeholder="Search documents…" oninput="filterDocs()">
+        <select class="form-select" style="width:auto" id="projFilter" onchange="filterDocs()">
+          <option value="">All Projects</option>
+        </select>
+        <select class="form-select" style="width:auto" id="catFilter" onchange="filterDocs()">
+          <option value="">All Categories</option>
+          <option>Loan Agreement</option>
+          <option>Site Report</option>
+          <option>Financial Statement</option>
+          <option>RERA Certificate</option>
+          <option>Legal Opinion</option>
+          <option>Valuation Report</option>
+          <option>Insurance</option>
+          <option>Approval / NOC</option>
+          <option>Construction Report</option>
+          <option>Sales Report</option>
+        </select>
+      </div>
+
+      <!-- Document Grid -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">🗄 Vault — <span class="accent">All Documents</span></span>
+          <div class="panel-actions"><span class="badge blue" id="docCount">0 FILES</span></div>
+        </div>
+        <div id="docList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span style="font-size:16px">↑</span>
+      <div><div style="font-size:14px;font-weight:600">Upload Document</div><div style="font-size:10px;color:var(--text-muted)">Supabase Storage · Secure vault</div></div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeUpload()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Project</label>
+        <select class="form-select" id="uploadProject"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="uploadCat">
+          <option>Loan Agreement</option><option>Site Report</option><option>Financial Statement</option>
+          <option>RERA Certificate</option><option>Legal Opinion</option><option>Valuation Report</option>
+          <option>Insurance</option><option>Approval / NOC</option><option>Construction Report</option><option>Sales Report</option>
+        </select>
+      </div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-zone-icon">📁</div>
+        <div class="drop-zone-text">Click to browse or drag & drop</div>
+        <div class="drop-zone-sub">PDF, Excel, Word, Image · Max 50MB</div>
+      </div>
+      <input type="file" id="fileInput" style="display:none" onchange="handleFile(event)" accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg">
+      <div id="fileStatus" style="margin-top:8px;font-size:11px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUpload()">Cancel</button>
+      <button class="btn btn-primary" onclick="uploadDoc()">Upload to Vault</button>
+    </div>
+  </div>
+</div>
+
+<script src="data/seed-data.js"></script>
+<script src="js/config.js" onerror="void(0)"></script>
+<script>
+const projects = NEXUS_DATA.projects;
+
+// Seed mock documents
+const MOCK_DOCS = [];
+const categories = ['Loan Agreement','Site Report','Financial Statement','RERA Certificate','Legal Opinion','Valuation Report','Construction Report','Sales Report'];
+const fileTypes   = ['PDF','PDF','XLSX','PDF','PDF','PDF','PDF','XLSX'];
+const sizes       = [2.4, 1.1, 0.8, 0.5, 3.2, 2.8, 1.6, 0.9];
+
+projects.slice(0, 15).forEach((p, pi) => {
+  const count = 2 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const ci = (pi + i) % categories.length;
+    const d  = new Date(2024, Math.floor(Math.random()*12), Math.floor(Math.random()*28)+1);
+    MOCK_DOCS.push({
+      id: `DOC_${p.id}_${i}`,
+      projectId: p.id, projectName: p.name, city: p.city,
+      name: `${categories[ci]} — ${p.name.split(' ').slice(-1)[0]} ${d.getFullYear()}.${fileTypes[ci].toLowerCase()}`,
+      category: categories[ci],
+      fileType: fileTypes[ci],
+      size: (sizes[ci] + Math.random() * 1.5).toFixed(1),
+      uploadedBy: ['Priya Shah','Raj Mehta','Ankit Verma'][Math.floor(Math.random()*3)],
+      uploadedAt: d.toLocaleDateString('en-IN'),
+      url: '#'
+    });
+  }
+});
+
+let filteredDocs = [...MOCK_DOCS];
+
+function typeIcon(t) {
+  return { PDF:'🔴', XLSX:'🟢', XLS:'🟢', DOCX:'🔵', DOC:'🔵', PNG:'🟡', JPG:'🟡', JPEG:'🟡' }[t] || '📄';
+}
+function typeCls(t) {
+  return { PDF:'pdf', XLSX:'xls', XLS:'xls', DOCX:'doc', DOC:'doc', PNG:'img', JPG:'img', JPEG:'img' }[t] || 'pdf';
+}
+
+function renderDocs() {
+  document.getElementById('docCount').textContent = filteredDocs.length + ' FILES';
+  if (filteredDocs.length === 0) {
+    document.getElementById('docList').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px">No documents found</div>';
+    return;
+  }
+  document.getElementById('docList').innerHTML = filteredDocs.map(d => `
+    <div class="doc-item">
+      <div class="doc-icon ${typeCls(d.fileType)}">${typeIcon(d.fileType)}</div>
+      <div class="doc-content" style="flex:1;min-width:0">
+        <div class="doc-name">${d.name}</div>
+        <div class="doc-meta">${d.projectName} · ${d.city} · ${d.uploadedBy} · ${d.uploadedAt}</div>
+      </div>
+      <span class="doc-tag" style="background:rgba(0,255,204,0.06);color:var(--text-secondary);border:1px solid var(--border)">${d.category}</span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:50px;text-align:right">${d.size} MB</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="viewDoc('${d.id}')">👁 View</button>
+        <button class="btn btn-sm btn-secondary" onclick="downloadDoc('${d.id}')">↓</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterDocs() {
+  const q    = document.getElementById('docSearch').value.toLowerCase();
+  const proj = document.getElementById('projFilter').value;
+  const cat  = document.getElementById('catFilter').value;
+  filteredDocs = MOCK_DOCS.filter(d => {
+    if (q   && !d.name.toLowerCase().includes(q) && !d.projectName.toLowerCase().includes(q)) return false;
+    if (proj && d.projectId !== proj) return false;
+    if (cat  && d.category !== cat)  return false;
+    return true;
+  });
+  renderDocs();
+}
+
+function viewDoc(id)     { alert('In production: opens document from Supabase Storage in new tab.'); }
+function downloadDoc(id) { alert('In production: downloads document from Supabase Storage.'); }
+
+function openUpload()  { document.getElementById('uploadModal').classList.add('open'); }
+function closeUpload() { document.getElementById('uploadModal').classList.remove('open'); }
+
+function handleFile(e) {
+  const f = e.target.files[0];
+  if (f) {
+    document.getElementById('dropZone').innerHTML = `<div class="drop-zone-icon">✅</div><div class="drop-zone-text" style="color:var(--green)">${f.name}</div><div class="drop-zone-sub">${(f.size/1024/1024).toFixed(1)} MB</div>`;
+    document.getElementById('fileStatus').innerHTML = `<span style="color:var(--green)">✓ Ready to upload</span>`;
+  }
+}
+
+function uploadDoc() {
+  document.getElementById('fileStatus').innerHTML = `<span style="color:var(--amber)">⚙ Uploading to Supabase Storage…</span>`;
+  setTimeout(() => {
+    document.getElementById('fileStatus').innerHTML = `<span style="color:var(--green)">✓ Uploaded successfully. Document added to vault.</span>`;
+    setTimeout(closeUpload, 1500);
+  }, 1500);
+}
+
+// Populate filters
+const psel = document.getElementById('projFilter');
+const upsel = document.getElementById('uploadProject');
+projects.forEach(p => {
+  psel.innerHTML  += `<option value="${p.id}">${p.name}</option>`;
+  upsel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+});
+
+// Stats
+const byType = {};
+MOCK_DOCS.forEach(d => byType[d.fileType] = (byType[d.fileType]||0)+1);
+document.getElementById('vaultStats').innerHTML = `
+  <div class="stat-card cyan"><div class="stat-label">Total Documents</div><div class="stat-value">${MOCK_DOCS.length}</div><div class="stat-sub">Across all projects</div></div>
+  <div class="stat-card blue"><div class="stat-label">Projects With Docs</div><div class="stat-value">15</div><div class="stat-sub">15 remaining incomplete</div></div>
+  <div class="stat-card amber"><div class="stat-label">RERA Certificates</div><div class="stat-value">${MOCK_DOCS.filter(d=>d.category==='RERA Certificate').length}</div><div class="stat-sub">Compliance docs</div></div>
+  <div class="stat-card purple"><div class="stat-label">Legal Opinions</div><div class="stat-value">${MOCK_DOCS.filter(d=>d.category==='Legal Opinion').length}</div><div class="stat-sub">Due diligence</div></div>
+`;
+
+renderDocs();
+
+document.getElementById('sidebar').innerHTML = `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <div class="nav-section-label">Terminal</div>
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <div class="nav-section-label">Risk Tools</div>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <div class="nav-section-label">Operations</div>
+  <a class="nav-item" href="entry.html"><span class="nav-icon">✏️</span><span>Data Entry</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item active" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+  <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+  <a class="nav-item" href="deploy.html"><span class="nav-icon">🚀</span><span>Deploy Guide</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>

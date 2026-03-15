@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Stress Testing</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>PORTFOLIO STRESS TESTING</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-sm btn-primary" onclick="runStressTest()">⚡ Run Stress Test</button>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+
+      <!-- Scenario Selection -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header"><span class="panel-title">Scenario <span class="accent">Configuration</span></span></div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px" id="scenarioCards"></div>
+          <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">Or set custom parameters below:</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px">
+            <div>
+              <label class="form-label">Sales Velocity Drop (%)</label>
+              <input type="range" id="salesDrop" min="0" max="80" value="0" step="5" oninput="updateSlider(this,'salesDropVal')" style="width:100%;accent-color:var(--cyan)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);margin-top:3px"><span>0%</span><span id="salesDropVal" style="color:var(--amber);font-weight:600">0%</span><span>80%</span></div>
+            </div>
+            <div>
+              <label class="form-label">Cost Overrun Increase (%)</label>
+              <input type="range" id="costUp" min="0" max="40" value="0" step="5" oninput="updateSlider(this,'costUpVal')" style="width:100%;accent-color:var(--cyan)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);margin-top:3px"><span>0%</span><span id="costUpVal" style="color:var(--amber);font-weight:600">0%</span><span>40%</span></div>
+            </div>
+            <div>
+              <label class="form-label">Interest Rate Increase (bps)</label>
+              <input type="range" id="rateUp" min="0" max="400" value="0" step="25" oninput="updateSlider(this,'rateUpVal','bps')" style="width:100%;accent-color:var(--cyan)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);margin-top:3px"><span>0</span><span id="rateUpVal" style="color:var(--amber);font-weight:600">0 bps</span><span>400</span></div>
+            </div>
+            <div>
+              <label class="form-label">Construction Delay (days)</label>
+              <input type="range" id="constDelay" min="0" max="365" value="0" step="15" oninput="updateSlider(this,'constDelayVal','d')" style="width:100%;accent-color:var(--cyan)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);margin-top:3px"><span>0</span><span id="constDelayVal" style="color:var(--amber);font-weight:600">0 days</span><span>365</span></div>
+            </div>
+            <div>
+              <label class="form-label">Market Price Drop (%)</label>
+              <input type="range" id="priceDrop" min="0" max="50" value="0" step="5" oninput="updateSlider(this,'priceDropVal')" style="width:100%;accent-color:var(--cyan)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);margin-top:3px"><span>0%</span><span id="priceDropVal" style="color:var(--amber);font-weight:600">0%</span><span>50%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="stressResults" style="display:none">
+        <div class="stat-grid" id="stressStats"></div>
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Score <span class="accent">Migration</span></span></div>
+            <div class="panel-body"><div class="chart-container" style="height:240px"><canvas id="scoreMigChart"></canvas></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Alert Level <span class="accent">Changes</span></span></div>
+            <div class="panel-body"><div class="chart-container" style="height:240px"><canvas id="alertMigChart"></canvas></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Project-Level <span class="accent">Stress Impact</span></span></div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead><tr><th>PROJECT</th><th>BASE SCORE</th><th>STRESSED SCORE</th><th>DELTA</th><th>BASE STATUS</th><th>STRESSED STATUS</th><th>DSCR IMPACT</th><th>LTV IMPACT</th></tr></thead>
+              <tbody id="stressTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="stressPlaceholder" style="padding:60px;text-align:center;color:var(--text-muted)">
+        <div style="font-size:32px;margin-bottom:16px">⚡</div>
+        <div style="font-family:var(--font-mono);font-size:13px">Select a scenario or configure custom parameters, then click <strong style="color:var(--cyan)">Run Stress Test</strong></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="data/seed-data.js"></script>
+<script src="js/config.js" onerror="void(0)"></script>
+<script src="js/scoring-engine.js"></script>
+<script src="js/charts.js"></script>
+<script>
+const SCENARIOS = [
+  { id:'base',    label:'Base Case',         badge:'base',   icon:'📊', salesDrop:0,   costUp:0,  rateUp:0,   constDelay:0,  priceDrop:0,  desc:'No stress — current trajectory' },
+  { id:'mild',    label:'Mild Stress',       badge:'base',   icon:'📉', salesDrop:15,  costUp:5,  rateUp:50,  constDelay:30, priceDrop:5,  desc:'Sales −15%, cost +5%, rate +50bps' },
+  { id:'moderate',label:'Moderate Stress',   badge:'stress', icon:'⚠️', salesDrop:30,  costUp:15, rateUp:150, constDelay:90, priceDrop:15, desc:'Sales −30%, cost +15%, rate +150bps' },
+  { id:'severe',  label:'Severe Stress',     badge:'stress', icon:'🔴', salesDrop:50,  costUp:25, rateUp:250, constDelay:180,priceDrop:25, desc:'Sales −50%, cost +25%, rate +250bps' },
+  { id:'covid',   label:'COVID-19 Analog',   badge:'stress', icon:'🦠', salesDrop:70,  costUp:20, rateUp:0,   constDelay:270,priceDrop:20, desc:'Severe demand shock + construction halt' },
+  { id:'rate',    label:'Rate Shock +400bps',badge:'stress', icon:'📈', salesDrop:25,  costUp:0,  rateUp:400, constDelay:0,  priceDrop:10, desc:'Pure interest rate stress' },
+];
+
+let selectedScenario = null;
+
+document.getElementById('scenarioCards').innerHTML = SCENARIOS.map(s => `
+  <div class="scenario-card" id="sc_${s.id}" onclick="applyScenario('${s.id}')">
+    <span class="scenario-badge ${s.badge}">${s.id.toUpperCase()}</span>
+    <div style="font-size:14px;margin-bottom:2px">${s.icon} ${s.label}</div>
+    <div style="font-size:10px;color:var(--text-muted)">${s.desc}</div>
+  </div>
+`).join('');
+
+function applyScenario(id) {
+  selectedScenario = SCENARIOS.find(s => s.id === id);
+  document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('sc_' + id)?.classList.add('selected');
+  document.getElementById('salesDrop').value   = selectedScenario.salesDrop;
+  document.getElementById('costUp').value      = selectedScenario.costUp;
+  document.getElementById('rateUp').value      = selectedScenario.rateUp;
+  document.getElementById('constDelay').value  = selectedScenario.constDelay;
+  document.getElementById('priceDrop').value   = selectedScenario.priceDrop;
+  updateSlider(document.getElementById('salesDrop'), 'salesDropVal');
+  updateSlider(document.getElementById('costUp'), 'costUpVal');
+  updateSlider(document.getElementById('rateUp'), 'rateUpVal', 'bps');
+  updateSlider(document.getElementById('constDelay'), 'constDelayVal', 'd');
+  updateSlider(document.getElementById('priceDrop'), 'priceDropVal');
+}
+
+function updateSlider(el, valId, suffix) {
+  document.getElementById(valId).textContent = el.value + (suffix || '%');
+}
+
+function stressProject(p, params) {
+  const stressed = { ...p };
+  // Apply stresses
+  stressed.salesVelocity  = Math.max(0, Math.round(p.salesVelocity * (1 - params.salesDrop/100)));
+  stressed.costOverrun    = Math.min(100, p.costOverrun + params.costUp);
+  stressed.dscr           = Math.max(0, p.dscr - (params.rateUp / 10000) * p.ltv / 10);
+  stressed.constructionProgress = Math.max(0, p.constructionProgress - (params.constDelay / 365) * 30);
+  stressed.ltv            = Math.min(120, p.ltv + params.priceDrop * 0.8);
+  stressed.ltc            = Math.min(130, p.ltc + params.costUp * 0.6);
+  stressed.escrowBalance  = Math.max(0, Math.round(p.escrowBalance * (1 - params.salesDrop/200)));
+  return stressed;
+}
+
+function runStressTest() {
+  const params = {
+    salesDrop:   parseInt(document.getElementById('salesDrop').value),
+    costUp:      parseInt(document.getElementById('costUp').value),
+    rateUp:      parseInt(document.getElementById('rateUp').value),
+    constDelay:  parseInt(document.getElementById('constDelay').value),
+    priceDrop:   parseInt(document.getElementById('priceDrop').value),
+  };
+
+  const projects = NEXUS_DATA.projects;
+  const results = projects.map(p => {
+    const dev = NEXUS_DATA.developers.find(d => d.id === p.developerId);
+    const loan = NEXUS_DATA.loans.find(l => l.id === p.loanId);
+    const baseScore = RiskEngine.computeScore(p, dev, loan, NEXUS_DATA.marketData);
+    const stressed  = stressProject(p, params);
+    const stressScore = RiskEngine.computeScore(stressed, dev, loan, NEXUS_DATA.marketData);
+    return {
+      project: p, stressed,
+      baseScore: baseScore.totalScore, baseAlert: baseScore.alertLevel,
+      stressScore: stressScore.totalScore, stressAlert: stressScore.alertLevel,
+      delta: stressScore.totalScore - baseScore.totalScore,
+      dscrDelta: (stressed.dscr - p.dscr).toFixed(2),
+      ltvDelta: (stressed.ltv - p.ltv).toFixed(1)
+    };
+  });
+
+  // Stats
+  const toRed   = results.filter(r => r.baseAlert !== 'RED' && r.stressAlert === 'RED').length;
+  const toAmber = results.filter(r => r.baseAlert === 'GREEN' && r.stressAlert === 'AMBER').length;
+  const avgDelta = Math.round(results.reduce((s,r) => s + r.delta, 0) / results.length);
+  const npaRisk  = results.filter(r => r.stressed.dscr < 1.0).length;
+  document.getElementById('stressStats').innerHTML = `
+    <div class="stat-card red"><div class="stat-label">Projects → RED</div><div class="stat-value">${results.filter(r=>r.stressAlert==='RED').length}</div><div class="stat-sub">${toRed} new downgrades</div></div>
+    <div class="stat-card amber"><div class="stat-label">Projects → AMBER</div><div class="stat-value">${results.filter(r=>r.stressAlert==='AMBER').length}</div><div class="stat-sub">${toAmber} new downgrades</div></div>
+    <div class="stat-card green"><div class="stat-label">Remaining GREEN</div><div class="stat-value">${results.filter(r=>r.stressAlert==='GREEN').length}</div><div class="stat-sub">Resilient projects</div></div>
+    <div class="stat-card red"><div class="stat-label">DSCR < 1.0 (stressed)</div><div class="stat-value">${npaRisk}</div><div class="stat-sub">NPA risk under stress</div></div>
+    <div class="stat-card amber"><div class="stat-label">Avg Score Delta</div><div class="stat-value">${avgDelta > 0 ? '+' : ''}${avgDelta}</div><div class="stat-sub">Portfolio-wide impact</div></div>
+  `;
+
+  // Score migration chart
+  NexusCharts.destroyChart('scoreMigChart');
+  const ctx1 = document.getElementById('scoreMigChart');
+  new Chart(ctx1, {
+    type: 'scatter',
+    data: { datasets: [{
+      label: 'Base vs Stressed Score',
+      data: results.map(r => ({ x: r.baseScore, y: r.stressScore, name: r.project.name })),
+      backgroundColor: results.map(r => r.stressAlert === 'RED' ? '#ff335599' : r.stressAlert === 'AMBER' ? '#ffaa0099' : '#00ff8899'),
+      pointRadius: 7, pointHoverRadius: 10
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.name}: ${ctx.raw.x} → ${ctx.raw.y}` } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Base Score', color: 'var(--text-muted)' }, min:0, max:100, grid:{ color:'rgba(255,255,255,0.04)' } },
+        y: { title: { display: true, text: 'Stressed Score', color: 'var(--text-muted)' }, min:0, max:100, grid:{ color:'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  // Alert migration
+  NexusCharts.destroyChart('alertMigChart');
+  const ctx2 = document.getElementById('alertMigChart');
+  const migrate = (from, to) => results.filter(r => r.baseAlert === from && r.stressAlert === to).length;
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['GREEN→GREEN','GREEN→AMBER','GREEN→RED','AMBER→AMBER','AMBER→RED','RED→RED'],
+      datasets: [{
+        label: 'Projects',
+        data: [migrate('GREEN','GREEN'),migrate('GREEN','AMBER'),migrate('GREEN','RED'),migrate('AMBER','AMBER'),migrate('AMBER','RED'),migrate('RED','RED')],
+        backgroundColor: ['#00ff8866','#ffaa0066','#ff335566','#ffaa0066','#ff335566','#ff335566'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+    }
+  });
+
+  // Table
+  document.getElementById('stressTableBody').innerHTML = results
+    .sort((a,b) => a.delta - b.delta)
+    .map(r => {
+      const dc = r.delta < -20 ? 'var(--red)' : r.delta < -10 ? 'var(--amber)' : 'var(--text-muted)';
+      return `<tr>
+        <td><div style="font-weight:600;font-size:12px">${r.project.name}</div><div style="font-size:9px;color:var(--text-muted)">${r.project.city}</div></td>
+        <td style="font-family:var(--font-mono);font-weight:700;color:${RiskEngine.getScoreColor(r.baseScore)}">${r.baseScore}</td>
+        <td style="font-family:var(--font-mono);font-weight:700;color:${RiskEngine.getScoreColor(r.stressScore)}">${r.stressScore}</td>
+        <td style="font-family:var(--font-mono);font-weight:700;color:${dc}">${r.delta > 0 ? '+' : ''}${r.delta}</td>
+        <td><span class="badge ${r.baseAlert.toLowerCase()}">${r.baseAlert}</span></td>
+        <td><span class="badge ${r.stressAlert.toLowerCase()}">${r.stressAlert}</span></td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:${parseFloat(r.dscrDelta) < -0.1 ? 'var(--red)' : 'var(--text-muted)'}">${r.dscrDelta > 0 ? '+' : ''}${r.dscrDelta}x</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:${parseFloat(r.ltvDelta) > 5 ? 'var(--red)' : 'var(--text-muted)'}">+${r.ltvDelta}%</td>
+      </tr>`;
+    }).join('');
+
+  document.getElementById('stressResults').style.display = 'block';
+  document.getElementById('stressPlaceholder').style.display = 'none';
+}
+
+document.getElementById('sidebar').innerHTML = `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <div class="nav-section-label">Terminal</div>
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <div class="nav-section-label">Risk Tools</div>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item active" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <div class="nav-section-label">Operations</div>
+  <a class="nav-item" href="entry.html"><span class="nav-icon">✏️</span><span>Data Entry</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+  <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+  <a class="nav-item" href="deploy.html"><span class="nav-icon">🚀</span><span>Deploy Guide</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>
