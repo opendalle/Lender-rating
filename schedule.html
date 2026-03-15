@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Repayment Schedule</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>REPAYMENT SCHEDULE</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <select class="form-select" style="width:280px" id="loanSelect" onchange="renderSchedule()"></select>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+
+      <div class="stat-grid" id="scheduleStats"></div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Outstanding Balance <span class="accent">Reduction</span></span></div>
+          <div class="panel-body"><div class="chart-container" style="height:220px"><canvas id="balanceChart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Monthly <span class="accent">Obligations</span></span></div>
+          <div class="panel-body"><div class="chart-container" style="height:220px"><canvas id="obligationChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Upcoming Maturities -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header"><span class="panel-title">⚠ Upcoming Maturities — <span class="accent">Next 12 Months</span></span></div>
+        <div id="maturityCalendar"></div>
+      </div>
+
+      <!-- Full Schedule Table -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Amortisation <span class="accent">Schedule</span></span>
+          <div class="panel-actions"><span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)" id="scheduleLabel">—</span></div>
+        </div>
+        <div style="overflow-x:auto;max-height:500px;overflow-y:auto">
+          <table class="data-table">
+            <thead style="position:sticky;top:0;z-index:10">
+              <tr><th>#</th><th>DUE DATE</th><th>PRINCIPAL</th><th>INTEREST</th><th>TOTAL DUE</th><th>BALANCE AFTER</th><th>STATUS</th></tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="data/seed-data.js"></script>
+<script src="js/config.js" onerror="void(0)"></script>
+<script src="js/charts.js"></script>
+<script>
+const loans = NEXUS_DATA.loans;
+const projects = NEXUS_DATA.projects;
+
+// Populate loan select
+const sel = document.getElementById('loanSelect');
+loans.forEach(l => {
+  const p = projects.find(x => x.loanId === l.id);
+  sel.innerHTML += `<option value="${l.id}">${l.id} · ${p ? p.name : ''} · ${l.lender}</option>`;
+});
+
+function buildAmortisation(loan) {
+  const outstanding = loan.outstanding_amount || loan.outstandingAmount;
+  const rate = (loan.interest_rate || loan.interestRate) / 100 / 12;
+  const start = new Date(loan.start_date || loan.startDate);
+  const end   = new Date(loan.end_date   || loan.endDate);
+  const totalMonths = Math.round((end - start) / (1000 * 60 * 60 * 24 * 30.44));
+  const moratorium  = loan.moratorium_months || 0;
+
+  const schedule = [];
+  let balance = outstanding;
+  const today = new Date();
+
+  // During moratorium: interest only
+  for (let i = 1; i <= moratorium; i++) {
+    const dueDate = new Date(start);
+    dueDate.setMonth(dueDate.getMonth() + i);
+    const interest   = Math.round(balance * rate);
+    const principal  = 0;
+    const due = dueDate <= today ? 'PAID' : dueDate <= new Date(today.getFullYear(), today.getMonth() + 1, 0) ? 'DUE' : 'UPCOMING';
+    schedule.push({ month: i, dueDate, principal, interest, total: interest, balanceAfter: balance, status: due });
+  }
+
+  // Repayment phase — EMI
+  const repayMonths = totalMonths - moratorium;
+  const emi = repayMonths > 0
+    ? Math.round((balance * rate * Math.pow(1 + rate, repayMonths)) / (Math.pow(1 + rate, repayMonths) - 1))
+    : 0;
+
+  for (let i = 1; i <= repayMonths && balance > 0; i++) {
+    const dueDate = new Date(start);
+    dueDate.setMonth(dueDate.getMonth() + moratorium + i);
+    const interest  = Math.round(balance * rate);
+    const principal = Math.min(balance, Math.max(0, emi - interest));
+    balance -= principal;
+    const due = dueDate < today ? (Math.random() > 0.1 ? 'PAID' : 'OVERDUE') : dueDate <= new Date(today.getFullYear(), today.getMonth() + 1, 0) ? 'DUE' : 'UPCOMING';
+    schedule.push({ month: moratorium + i, dueDate, principal, interest, total: principal + interest, balanceAfter: Math.max(0, balance), status: due, isMoratorium: false });
+  }
+
+  return schedule;
+}
+
+function formatCr(v) {
+  if (v >= 1e10) return `₹${(v/1e10).toFixed(1)}Bn`;
+  if (v >= 1e7)  return `₹${(v/1e7).toFixed(1)}Cr`;
+  if (v >= 1e5)  return `₹${(v/1e5).toFixed(0)}L`;
+  return `₹${v.toLocaleString()}`;
+}
+
+let balChart = null, oblChart = null;
+
+function renderSchedule() {
+  const loanId = document.getElementById('loanSelect').value;
+  const loan   = loans.find(l => l.id === loanId);
+  if (!loan) return;
+  const proj   = projects.find(p => p.loanId === loanId);
+  const sched  = buildAmortisation(loan);
+
+  const outstanding = loan.outstanding_amount || loan.outstandingAmount;
+  const totalInterest = sched.reduce((s,r) => s + r.interest, 0);
+  const paid    = sched.filter(r => r.status === 'PAID').length;
+  const overdue = sched.filter(r => r.status === 'OVERDUE');
+
+  document.getElementById('scheduleStats').innerHTML = `
+    <div class="stat-card cyan"><div class="stat-label">Outstanding Balance</div><div class="stat-value">${formatCr(outstanding)}</div><div class="stat-sub">${loan.lender}</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total Instalments</div><div class="stat-value">${sched.length}</div><div class="stat-sub">${paid} paid</div></div>
+    <div class="stat-card ${overdue.length > 0 ? 'red' : 'green'}"><div class="stat-label">Overdue Payments</div><div class="stat-value">${overdue.length}</div><div class="stat-sub">${overdue.length > 0 ? 'Immediate action' : 'All current'}</div></div>
+    <div class="stat-card purple"><div class="stat-label">Total Interest Cost</div><div class="stat-value">${formatCr(totalInterest)}</div><div class="stat-sub">${(loan.interest_rate||loan.interestRate)}% p.a.</div></div>
+  `;
+  document.getElementById('scheduleLabel').textContent = `${loanId} · ${proj ? proj.name : ''} · ${sched.length} instalments`;
+
+  // Balance chart
+  if (balChart) balChart.destroy();
+  const ctx1 = document.getElementById('balanceChart');
+  balChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: sched.filter((_,i) => i % 3 === 0).map(r => r.dueDate.toLocaleDateString('en-IN',{month:'short',year:'2-digit'})),
+      datasets: [{
+        label: 'Outstanding Balance',
+        data: sched.filter((_,i) => i % 3 === 0).map(r => r.balanceAfter / 1e7),
+        borderColor: '#00aaff', backgroundColor: 'rgba(0,170,255,0.1)', fill: true, tension: 0.3
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v+'Cr'}} } }
+  });
+
+  // Obligation chart
+  if (oblChart) oblChart.destroy();
+  const ctx2 = document.getElementById('obligationChart');
+  const upcoming = sched.filter(r => r.status !== 'PAID').slice(0, 12);
+  oblChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: upcoming.map(r => r.dueDate.toLocaleDateString('en-IN',{month:'short',year:'2-digit'})),
+      datasets: [
+        { label:'Principal', data: upcoming.map(r => r.principal/1e7), backgroundColor:'#00aaff88', borderRadius:3 },
+        { label:'Interest',  data: upcoming.map(r => r.interest/1e7),  backgroundColor:'#aa55ff88', borderRadius:3 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},
+      scales: {
+        x:{stacked:true, grid:{display:false}},
+        y:{stacked:true, grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'₹'+v.toFixed(1)+'Cr'}}
+      }
+    }
+  });
+
+  // Maturity calendar
+  const endDate  = new Date(loan.end_date || loan.endDate);
+  const daysLeft = Math.round((endDate - new Date()) / (1000*60*60*24));
+  const urgency  = daysLeft < 90 ? 'cal-urgent' : daysLeft < 180 ? 'cal-warn' : '';
+  document.getElementById('maturityCalendar').innerHTML = `
+    <div class="cal-item ${urgency}">
+      <div class="cal-date-box">
+        <div class="cal-date-day">${endDate.getDate()}</div>
+        <div class="cal-date-mo">${endDate.toLocaleDateString('en-IN',{month:'short',year:'2-digit'})}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">Loan Maturity — ${loanId}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${proj ? proj.name : ''} · ${loan.lender}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:${daysLeft<90?'var(--red)':daysLeft<180?'var(--amber)':'var(--text-primary)'}">${daysLeft} days</div>
+        <div style="font-size:9px;color:var(--text-muted)">Remaining</div>
+      </div>
+      <div style="text-align:right;padding-left:14px;border-left:1px solid var(--border)">
+        <div style="font-family:var(--font-mono);font-size:14px;font-weight:700">${formatCr(outstanding)}</div>
+        <div style="font-size:9px;color:var(--text-muted)">Outstanding</div>
+      </div>
+    </div>
+    ${overdue.length > 0 ? overdue.map(r => `
+      <div class="cal-item cal-urgent">
+        <div class="cal-date-box">
+          <div class="cal-date-day">${r.dueDate.getDate()}</div>
+          <div class="cal-date-mo">${r.dueDate.toLocaleDateString('en-IN',{month:'short',year:'2-digit'})}</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:var(--red)">OVERDUE PAYMENT</div>
+          <div style="font-size:10px;color:var(--text-muted)">Instalment #${r.month}</div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--red)">${formatCr(r.total)}</div>
+      </div>`).join('') : ''}
+  `;
+
+  // Table
+  document.getElementById('scheduleBody').innerHTML = sched.map(r => {
+    const rowClass = r.status === 'OVERDUE' ? 'repay-row-overdue' : r.status === 'PAID' ? 'repay-row-paid' : r.status === 'DUE' ? 'repay-row-due' : '';
+    const statusBadge = r.status === 'OVERDUE' ? '<span class="badge red">OVERDUE</span>' : r.status === 'PAID' ? '<span style="color:var(--text-muted);font-size:10px">✓ Paid</span>' : r.status === 'DUE' ? '<span class="badge amber">DUE</span>' : '<span style="color:var(--text-muted);font-size:10px">Upcoming</span>';
+    return `<tr class="${rowClass}">
+      <td class="mono" style="font-size:10px">${r.month}</td>
+      <td class="mono" style="font-size:11px">${r.dueDate.toLocaleDateString('en-IN')}</td>
+      <td class="mono" style="font-size:11px">${r.principal > 0 ? formatCr(r.principal) : '—'}</td>
+      <td class="mono" style="font-size:11px">${formatCr(r.interest)}</td>
+      <td class="mono" style="font-size:11px;font-weight:600">${formatCr(r.total)}</td>
+      <td class="mono" style="font-size:11px">${formatCr(r.balanceAfter)}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+renderSchedule();
+document.getElementById('sidebar').innerHTML = `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item active" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>

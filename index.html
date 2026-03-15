@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Real Estate Credit Intelligence Terminal</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* Page-specific overrides */
+.page { display: none; }
+.page.active { display: block; }
+
+.portfolio-heat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.heat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.heat-card:hover { background: var(--bg-panel); transform: translateY(-1px); }
+.heat-card.green { border-left-color: var(--green); }
+.heat-card.amber { border-left-color: var(--amber); }
+.heat-card.red { border-left-color: var(--red); animation: urgent-pulse 3s infinite; }
+
+@keyframes urgent-pulse {
+  0%, 100% { border-left-color: var(--red); }
+  50% { border-left-color: rgba(255,51,85,0.4); }
+}
+
+.heat-card-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+.heat-card-meta { font-size: 10px; color: var(--text-muted); margin-bottom: 8px; }
+
+.heat-card-metrics {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.heat-metric { display: flex; flex-direction: column; }
+.heat-metric .hm-label { color: var(--text-muted); font-size: 8px; text-transform: uppercase; }
+.heat-metric .hm-value { font-weight: 600; }
+
+.dev-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dev-card:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+}
+
+.dev-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+.dev-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.market-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.market-card-city { flex: 1; }
+.market-city-name { font-size: 13px; font-weight: 600; }
+.market-city-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.market-price {
+  text-align: right;
+  font-family: var(--font-mono);
+}
+
+.market-price .price-val { font-size: 14px; font-weight: 600; }
+.market-price .price-chg { font-size: 10px; margin-top: 2px; }
+
+/* Score gauge center text */
+.gauge-wrap { position: relative; }
+.gauge-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -45%);
+  text-align: center;
+  pointer-events: none;
+}
+.gauge-score {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.gauge-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Upload modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6,6,16,0.8);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  width: min(520px, 95vw);
+  animation: slideUp 0.2s ease;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-body { padding: 20px; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; display: block; font-family: var(--font-mono); }
+
+.form-input {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus { border-color: var(--cyan); }
+
+.form-select {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.drop-zone {
+  border: 2px dashed var(--border-bright);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--cyan);
+  background: rgba(0,255,204,0.04);
+}
+
+.drop-zone-icon { font-size: 32px; margin-bottom: 10px; }
+.drop-zone-text { font-size: 12px; color: var(--text-secondary); }
+.drop-zone-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="terminal-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">◈</div>
+        <div>
+          <div>NEXUS ASIA</div>
+          <div class="logo-sub">Credit Intelligence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-search" style="position:relative">
+      <div class="search-input-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" placeholder="Search projects..." id="globalSearch" autocomplete="off">
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Terminal</div>
+      <a class="nav-item active" data-page="portfolio" onclick="showPage('portfolio')">
+        <span class="nav-icon">⬡</span>
+        <span>Portfolio</span>
+      </a>
+      <a class="nav-item" data-page="projects" onclick="showPage('projects')">
+        <span class="nav-icon">◫</span>
+        <span>Projects</span>
+      </a>
+      <a class="nav-item" data-page="alerts" onclick="showPage('alerts')">
+        <span class="nav-icon">⚠</span>
+        <span>Alerts</span>
+        <span class="nav-badge" id="alertBadge">7</span>
+      </a>
+
+      <div class="nav-section-label">Intelligence</div>
+      <a class="nav-item" data-page="developers" onclick="showPage('developers')">
+        <span class="nav-icon">⊙</span>
+        <span>Developers</span>
+      </a>
+      <a class="nav-item" data-page="markets" onclick="showPage('markets')">
+        <span class="nav-icon">◈</span>
+        <span>Markets</span>
+      </a>
+      <a class="nav-item" data-page="reports" onclick="showPage('reports')">
+        <span class="nav-icon">⊟</span>
+        <span>Reports</span>
+      </a>
+
+      <div class="nav-section-label">Risk Tools</div>
+      <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+      <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+      <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+      <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+      <div class="nav-section-label">Operations</div>
+      <a class="nav-item" onclick="openUploadModal()"><span class="nav-icon">↑</span><span>Data Ingest</span></a>
+      <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+      <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+      <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+      <a class="nav-item" href="deploy.html"><span class="nav-icon">🚀</span><span>Deploy Guide</span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-ticker">
+        <div class="status-dot"></div>
+        <span>LIVE · <span id="clockTime">--:--:--</span></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span id="pageTitle">PORTFOLIO TERMINAL</span></div>
+      <div class="topbar-metrics">
+        <div class="topbar-metric">
+          <span class="label">EXPOSURE</span>
+          <span class="value" id="tb-exposure">₹0</span>
+        </div>
+        <div class="topbar-metric">
+          <span class="label">PROJECTS</span>
+          <span class="value">30</span>
+        </div>
+        <div class="topbar-metric">
+          <span class="label">RED</span>
+          <span class="value red" id="tb-red">0</span>
+        </div>
+        <div class="topbar-metric">
+          <span class="label">AMBER</span>
+          <span class="value amber" id="tb-amber">0</span>
+        </div>
+        <div class="topbar-metric">
+          <span class="label">GREEN</span>
+          <span class="value green" id="tb-green">0</span>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="openUploadModal()">+ Ingest Data</button>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div class="page-content">
+
+      <!-- PORTFOLIO PAGE -->
+      <div class="page active" id="page-portfolio">
+        <div class="stat-grid" id="portfolioStats"></div>
+
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Risk Distribution</span>
+              <div class="panel-actions">
+                <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">30 PROJECTS</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container chart-h-md">
+                <canvas id="riskDonutChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Exposure by Developer</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container chart-h-md">
+                <canvas id="devExposureChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-header">
+            <span class="panel-title">Exposure by City</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-container chart-h-md">
+              <canvas id="cityExposureChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Portfolio <span class="accent">Heatmap</span> · All Projects</span>
+            <div class="panel-actions">
+              <select class="form-select" style="width:auto;font-size:10px;padding:4px 10px" onchange="filterHeatmap(this.value)">
+                <option value="ALL">All Status</option>
+                <option value="RED">Red Alert</option>
+                <option value="AMBER">Amber Alert</option>
+                <option value="GREEN">Green</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="portfolio-heat-grid" id="portfolioHeatmap"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECTS PAGE -->
+      <div class="page" id="page-projects">
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <input type="text" class="form-input" style="max-width:300px" placeholder="Filter projects..." id="projectFilter" oninput="filterProjects()">
+          <select class="form-select" style="width:auto" id="cityFilter" onchange="filterProjects()">
+            <option value="">All Cities</option>
+          </select>
+          <select class="form-select" style="width:auto" id="statusFilter" onchange="filterProjects()">
+            <option value="">All Status</option>
+            <option value="GREEN">Green</option>
+            <option value="AMBER">Amber</option>
+            <option value="RED">Red</option>
+          </select>
+          <select class="form-select" style="width:auto" id="typeFilter" onchange="filterProjects()">
+            <option value="">All Types</option>
+          </select>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Project <span class="accent">Intelligence</span> Table</span>
+            <div class="panel-actions">
+              <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)" id="projectCount">30 projects</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="projectTable">
+              <thead>
+                <tr>
+                  <th>PROJECT</th>
+                  <th>DEVELOPER</th>
+                  <th>CITY</th>
+                  <th>TYPE</th>
+                  <th>RISK SCORE</th>
+                  <th>STATUS</th>
+                  <th>DSCR</th>
+                  <th>LTV</th>
+                  <th>PROGRESS</th>
+                  <th>SALES%</th>
+                  <th>EXPOSURE</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="projectTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTS PAGE -->
+      <div class="page" id="page-alerts">
+        <div class="stat-grid" id="alertStats"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">🔴 Critical <span class="accent">Red Alerts</span></span>
+              <div class="panel-actions">
+                <span class="badge red" id="redAlertCount">0 ACTIVE</span>
+              </div>
+            </div>
+            <div id="redAlertFeed"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">🟡 Warning <span class="accent">Amber Alerts</span></span>
+              <div class="panel-actions">
+                <span class="badge amber" id="amberAlertCount">0 ACTIVE</span>
+              </div>
+            </div>
+            <div id="amberAlertFeed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEVELOPERS PAGE -->
+      <div class="page" id="page-developers">
+        <div class="stat-grid" id="devStats"></div>
+        <div class="grid-auto" id="developerGrid"></div>
+      </div>
+
+      <!-- MARKETS PAGE -->
+      <div class="page" id="page-markets">
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Price Trends by City</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container chart-h-lg">
+                <canvas id="marketPriceChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Absorption Rate &amp; Demand Index</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container chart-h-lg">
+                <canvas id="absorptionChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-auto" id="marketGrid"></div>
+      </div>
+
+      <!-- REPORTS PAGE -->
+      <div class="page" id="page-reports">
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-header">
+            <span class="panel-title">Report <span class="accent">Generator</span></span>
+          </div>
+          <div class="panel-body">
+            <div style="max-width:500px">
+              <div class="form-group">
+                <label class="form-label">Select Project</label>
+                <select class="form-select" id="reportProjectSelect"></select>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="generatePDFReport()">📄 Download PDF Report</button>
+                <button class="btn btn-secondary" onclick="generateCSVReport()">📊 Download CSV Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">All Projects — Batch Reports</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>PROJECT</th>
+                  <th>DEVELOPER</th>
+                  <th>STATUS</th>
+                  <th>RISK SCORE</th>
+                  <th>LOAN EXPOSURE</th>
+                  <th>PDF REPORT</th>
+                  <th>CSV DATA</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEMA PAGE -->
+      <div class="page" id="page-schema">
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-header">
+            <span class="panel-title">Database <span class="accent">Architecture</span> · Supabase PostgreSQL</span>
+          </div>
+          <div class="panel-body">
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px">NEXUS ASIA uses Supabase (PostgreSQL) as its backend. Run the SQL below in your Supabase SQL Editor to initialize all tables.</p>
+            <pre class="code-block" id="sqlSchema" style="white-space:pre-wrap;font-size:10px;line-height:1.8;max-height:600px;overflow-y:auto"></pre>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /terminal-shell -->
+
+<!-- PROJECT DOSSIER PANEL -->
+<div class="dossier-overlay" id="dossierOverlay" onclick="closeDossierOnBackdrop(event)">
+  <div class="dossier-panel" id="dossierPanel">
+    <div class="dossier-header">
+      <div class="dossier-header-info">
+        <div class="dossier-title" id="dossierTitle">—</div>
+        <div class="dossier-meta" id="dossierMeta"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="gauge-wrap" style="width:90px;height:90px">
+          <canvas id="dossierGaugeChart" width="90" height="90"></canvas>
+          <div class="gauge-center">
+            <div class="gauge-score" id="dossierScoreVal">—</div>
+            <div class="gauge-label">SCORE</div>
+          </div>
+        </div>
+        <div id="dossierBadge"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeDossier()" style="align-self:flex-start;margin-left:8px">✕ Close</button>
+    </div>
+
+    <div class="dossier-tabs" id="dossierTabs">
+      <div class="dossier-tab active" onclick="switchDossierTab('overview', this)">Overview</div>
+      <div class="dossier-tab" onclick="switchDossierTab('risk', this)">Risk Analysis</div>
+      <div class="dossier-tab" onclick="switchDossierTab('construction', this)">Construction</div>
+      <div class="dossier-tab" onclick="switchDossierTab('sales', this)">Sales</div>
+      <div class="dossier-tab" onclick="switchDossierTab('financial', this)">Financial</div>
+      <div class="dossier-tab" onclick="switchDossierTab('sponsor', this)">Sponsor</div>
+      <div class="dossier-tab" onclick="switchDossierTab('alerts', this)">Alerts</div>
+    </div>
+
+    <div class="dossier-body" id="dossierBody">
+      <div style="color:var(--text-muted);font-size:12px">Select a project to view its dossier.</div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span style="font-size:16px">↑</span>
+      <div>
+        <div style="font-size:14px;font-weight:600">Data Ingest Terminal</div>
+        <div style="font-size:10px;color:var(--text-muted)">Upload CSV reports or enter manual updates</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeModal('uploadModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Report Type</label>
+        <select class="form-select" id="ingestType">
+          <option value="construction">Construction Progress Report</option>
+          <option value="sales">Sales Update Report</option>
+          <option value="financial">Financial Statement</option>
+          <option value="manual">Manual Project Update</option>
+        </select>
+      </div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+        <div class="drop-zone-icon">📂</div>
+        <div class="drop-zone-text">Click to browse or drag &amp; drop CSV file</div>
+        <div class="drop-zone-sub">Supported: .csv, .xlsx — Max 10MB</div>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx" style="display:none" onchange="handleFileSelect(event)">
+      <div id="fileStatus" style="margin-top:10px;font-size:11px;color:var(--text-muted)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="processUpload()">Process Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="data/seed-data.js"></script>
+<script src="js/scoring-engine.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/report-generator.js"></script>
+<script>
+// =====================================
+// NEXUS ASIA — Terminal UI Engine
+// =====================================
+
+let currentDossierProject = null;
+let currentDossierTab = 'overview';
+let allProjects = [];
+let chartsInitialized = false;
+
+// ─── INIT ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  allProjects = NEXUS_DATA.projects;
+  enrichProjectScores();
+  populateTopbar();
+  renderPortfolioStats();
+  renderPortfolioCharts();
+  renderHeatmap('ALL');
+  renderProjectTable();
+  renderAlertsPage();
+  renderDevelopersPage();
+  renderMarketsPage();
+  renderReportsPage();
+  renderSchemaPage();
+  populateFilters();
+  populateReportSelect();
+  startClock();
+  initSearch();
+});
+
+function enrichProjectScores() {
+  allProjects.forEach(p => {
+    const dev = getDev(p.developerId);
+    const loan = getLoan(p.loanId);
+    const result = RiskEngine.computeScore(p, dev, loan, NEXUS_DATA.marketData);
+    p._scoreResult = result;
+    p.riskScore = result.totalScore;
+    p.alertLevel = result.alertLevel;
+  });
+}
+
+function getDev(id) { return NEXUS_DATA.developers.find(d => d.id === id); }
+function getLoan(id) { return NEXUS_DATA.loans.find(l => l.id === id); }
+function getProjectAlerts(p) { return RiskEngine.detectAlerts(p, getDev(p.developerId), getLoan(p.loanId)); }
+
+// ─── CLOCK ───────────────────────────────────────────────
+function startClock() {
+  const tick = () => {
+    const now = new Date();
+    document.getElementById('clockTime').textContent = now.toLocaleTimeString('en-IN', { hour12: false });
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ─── PAGE ROUTING ────────────────────────────────────────
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + pageId);
+  if (pg) pg.classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+  if (nav) nav.classList.add('active');
+
+  const titles = { portfolio: 'PORTFOLIO TERMINAL', projects: 'PROJECT INTELLIGENCE', alerts: 'ALERT COMMAND CENTER', developers: 'SPONSOR INTELLIGENCE', markets: 'MARKET INTELLIGENCE', reports: 'REPORT GENERATOR', schema: 'DATABASE SCHEMA' };
+  document.getElementById('pageTitle').textContent = titles[pageId] || pageId.toUpperCase();
+
+  if (pageId === 'markets' && !chartsInitialized) {
+    setTimeout(() => { renderMarketsCharts(); chartsInitialized = true; }, 100);
+  }
+}
+
+// ─── TOPBAR ──────────────────────────────────────────────
+function populateTopbar() {
+  const loans = NEXUS_DATA.loans;
+  const totalExposure = loans.reduce((s, l) => s + l.outstandingAmount, 0);
+  document.getElementById('tb-exposure').textContent = formatCurrency(totalExposure);
+  const red = allProjects.filter(p => p.alertLevel === 'RED').length;
+  const amber = allProjects.filter(p => p.alertLevel === 'AMBER').length;
+  const green = allProjects.filter(p => p.alertLevel === 'GREEN').length;
+  document.getElementById('tb-red').textContent = red;
+  document.getElementById('tb-amber').textContent = amber;
+  document.getElementById('tb-green').textContent = green;
+  document.getElementById('alertBadge').textContent = NEXUS_DATA.alerts.filter(a => !a.acknowledged).length;
+}
+
+function formatCurrency(v) {
+  if (v >= 1e10) return `₹${(v/1e10).toFixed(2)}Bn`;
+  if (v >= 1e7) return `₹${(v/1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `₹${(v/1e5).toFixed(0)}L`;
+  return `₹${v.toLocaleString()}`;
+}
+
+// ─── PORTFOLIO PAGE ──────────────────────────────────────
+function renderPortfolioStats() {
+  const totalExposure = NEXUS_DATA.loans.reduce((s, l) => s + l.outstandingAmount, 0);
+  const npas = NEXUS_DATA.loans.filter(l => l.status === 'NPA');
+  const npaExposure = npas.reduce((s, l) => s + l.outstandingAmount, 0);
+  const red = allProjects.filter(p => p.alertLevel === 'RED').length;
+  const amber = allProjects.filter(p => p.alertLevel === 'AMBER').length;
+  const avgScore = Math.round(allProjects.reduce((s, p) => s + p.riskScore, 0) / allProjects.length);
+
+  const stats = [
+    { label: 'Total Exposure', value: formatCurrency(totalExposure), sub: `${NEXUS_DATA.loans.length} active loans`, cls: 'cyan' },
+    { label: 'Projects Financed', value: '30', sub: '10 developers', cls: 'blue' },
+    { label: 'Red Alert Projects', value: red, sub: 'Immediate attention required', cls: 'red' },
+    { label: 'Amber Alert Projects', value: amber, sub: 'Enhanced monitoring', cls: 'amber' },
+    { label: 'Avg Portfolio Score', value: `${avgScore}/100`, sub: 'Risk weighted', cls: 'green' },
+    { label: 'NPA Exposure', value: formatCurrency(npaExposure), sub: `${npas.length} loans in default`, cls: 'red' },
+  ];
+
+  document.getElementById('portfolioStats').innerHTML = stats.map(s => `
+    <div class="stat-card ${s.cls}">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderPortfolioCharts() {
+  const red = allProjects.filter(p => p.alertLevel === 'RED').length;
+  const amber = allProjects.filter(p => p.alertLevel === 'AMBER').length;
+  const green = allProjects.filter(p => p.alertLevel === 'GREEN').length;
+  NexusCharts.renderRiskDonut('riskDonutChart', { red, amber, green });
+
+  const devMap = {};
+  NEXUS_DATA.loans.forEach(l => {
+    const proj = allProjects.find(p => p.loanId === l.id);
+    if (!proj) return;
+    const dev = getDev(proj.developerId);
+    const name = dev ? dev.name : proj.developerId;
+    devMap[name] = (devMap[name] || { exposure: 0, riskScore: dev ? dev.riskScore : 50 });
+    devMap[name].exposure += l.outstandingAmount;
+    devMap[name].name = name;
+    devMap[name].riskScore = dev ? dev.riskScore : 50;
+  });
+  NexusCharts.renderDeveloperExposure('devExposureChart', Object.values(devMap));
+
+  const cityMap = {};
+  NEXUS_DATA.loans.forEach(l => {
+    const proj = allProjects.find(p => p.loanId === l.id);
+    if (!proj) return;
+    cityMap[proj.city] = (cityMap[proj.city] || 0) + l.outstandingAmount;
+  });
+  const cityData = Object.entries(cityMap).map(([city, exposure]) => ({ city, exposure }));
+  NexusCharts.renderCityExposure('cityExposureChart', cityData);
+}
+
+function renderHeatmap(filter) {
+  const container = document.getElementById('portfolioHeatmap');
+  const projects = filter === 'ALL' ? allProjects : allProjects.filter(p => p.alertLevel === filter);
+  container.innerHTML = projects.map(p => {
+    const loan = getLoan(p.loanId);
+    const dev = getDev(p.developerId);
+    const color = RiskEngine.getScoreColor(p.riskScore);
+    return `
+    <div class="heat-card ${p.alertLevel.toLowerCase()}" onclick="openDossier('${p.id}')">
+      <div class="heat-card-name">${p.name}</div>
+      <div class="heat-card-meta">${p.city} · ${p.type} · ${dev ? dev.name.split(' ')[0] : ''}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="badge ${p.alertLevel.toLowerCase()}">${p.alertLevel}</span>
+        <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:${color}">${p.riskScore}</span>
+      </div>
+      <div class="heat-card-metrics">
+        <div class="heat-metric"><span class="hm-label">DSCR</span><span class="hm-value" style="color:${p.dscr >= 1.2 ? 'var(--green)' : p.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)'}">${p.dscr.toFixed(2)}x</span></div>
+        <div class="heat-metric"><span class="hm-label">CONST</span><span class="hm-value">${p.constructionProgress}%</span></div>
+        <div class="heat-metric"><span class="hm-label">SALES</span><span class="hm-value">${((p.unitsSold/p.totalUnits)*100).toFixed(0)}%</span></div>
+        <div class="heat-metric"><span class="hm-label">EXPSR</span><span class="hm-value">${loan ? formatCurrency(loan.outstandingAmount) : '—'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterHeatmap(val) { renderHeatmap(val); }
+
+// ─── PROJECTS TABLE ──────────────────────────────────────
+function populateFilters() {
+  const cities = [...new Set(allProjects.map(p => p.city))].sort();
+  const types = [...new Set(allProjects.map(p => p.type))].sort();
+  const cityEl = document.getElementById('cityFilter');
+  const typeEl = document.getElementById('typeFilter');
+  cities.forEach(c => cityEl.innerHTML += `<option>${c}</option>`);
+  types.forEach(t => typeEl.innerHTML += `<option>${t}</option>`);
+}
+
+function filterProjects() {
+  const text = document.getElementById('projectFilter').value.toLowerCase();
+  const city = document.getElementById('cityFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const type = document.getElementById('typeFilter').value;
+
+  const filtered = allProjects.filter(p => {
+    const dev = getDev(p.developerId);
+    const devName = dev ? dev.name.toLowerCase() : '';
+    if (text && !p.name.toLowerCase().includes(text) && !devName.includes(text) && !p.city.toLowerCase().includes(text)) return false;
+    if (city && p.city !== city) return false;
+    if (status && p.alertLevel !== status) return false;
+    if (type && p.type !== type) return false;
+    return true;
+  });
+
+  document.getElementById('projectCount').textContent = `${filtered.length} projects`;
+  renderProjectTableRows(filtered);
+}
+
+function renderProjectTable() { renderProjectTableRows(allProjects); }
+
+function renderProjectTableRows(projects) {
+  const tbody = document.getElementById('projectTableBody');
+  tbody.innerHTML = projects.map(p => {
+    const loan = getLoan(p.loanId);
+    const dev = getDev(p.developerId);
+    const color = RiskEngine.getScoreColor(p.riskScore);
+    const cv = p.constructionProgress - p.scheduledProgress;
+    const salesPct = ((p.unitsSold/p.totalUnits)*100).toFixed(0);
+    return `<tr>
+      <td><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text-muted)">${p.id}</div></td>
+      <td style="font-size:11px">${dev ? dev.name : '—'}</td>
+      <td><span class="tag tag-blue">${p.city}</span></td>
+      <td style="font-size:10px;color:var(--text-secondary)">${p.type}</td>
+      <td>
+        <div class="score-bar">
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${p.riskScore}%;background:${color}"></div></div>
+          <div class="score-value" style="color:${color}">${p.riskScore}</div>
+        </div>
+      </td>
+      <td><span class="badge ${p.alertLevel.toLowerCase()}">${p.alertLevel}</span></td>
+      <td class="mono" style="color:${p.dscr >= 1.2 ? 'var(--green)' : p.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)'}">${p.dscr.toFixed(2)}x</td>
+      <td class="mono" style="color:${p.ltv <= 65 ? 'var(--green)' : p.ltv <= 80 ? 'var(--amber)' : 'var(--red)'}">${p.ltv}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:50px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+            <div style="width:${p.constructionProgress}%;height:100%;background:${cv >= 0 ? 'var(--green)' : cv > -10 ? 'var(--amber)' : 'var(--red)'}"></div>
+          </div>
+          <span class="mono" style="font-size:10px">${p.constructionProgress}%</span>
+        </div>
+      </td>
+      <td class="mono" style="font-size:11px">${salesPct}%</td>
+      <td class="mono" style="font-size:11px">${loan ? formatCurrency(loan.outstandingAmount) : '—'}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="openDossier('${p.id}')">View →</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── ALERTS PAGE ─────────────────────────────────────────
+function renderAlertsPage() {
+  const allAlerts = allProjects.flatMap(p => {
+    const a = getProjectAlerts(p);
+    return a.map(al => ({ ...al, projectId: p.id, projectName: p.name, city: p.city }));
+  });
+
+  const red = allAlerts.filter(a => a.level === 'RED');
+  const amber = allAlerts.filter(a => a.level === 'AMBER');
+
+  document.getElementById('redAlertCount').textContent = `${red.length} ACTIVE`;
+  document.getElementById('amberAlertCount').textContent = `${amber.length} ACTIVE`;
+
+  document.getElementById('alertStats').innerHTML = `
+    <div class="stat-card red"><div class="stat-label">Critical Red Alerts</div><div class="stat-value">${red.length}</div><div class="stat-sub">Immediate action required</div></div>
+    <div class="stat-card amber"><div class="stat-label">Amber Warnings</div><div class="stat-value">${amber.length}</div><div class="stat-sub">Enhanced monitoring</div></div>
+    <div class="stat-card red"><div class="stat-label">NPA Loans</div><div class="stat-value">${NEXUS_DATA.loans.filter(l=>l.status==='NPA').length}</div><div class="stat-sub">In default status</div></div>
+    <div class="stat-card amber"><div class="stat-label">Watch Loans</div><div class="stat-value">${NEXUS_DATA.loans.filter(l=>l.status==='WATCH').length}</div><div class="stat-sub">Under surveillance</div></div>
+  `;
+
+  const renderFeed = (alerts, containerId) => {
+    document.getElementById(containerId).innerHTML = alerts.length ? alerts.map(a => `
+      <div class="alert-item ${a.level.toLowerCase()}" onclick="openDossier('${a.projectId}')">
+        <div class="alert-icon ${a.level.toLowerCase()}">${a.level === 'RED' ? '🔴' : '🟡'}</div>
+        <div class="alert-content">
+          <div class="alert-title">${a.projectName} · <span style="color:var(--text-muted);font-size:10px">${a.city}</span></div>
+          <div style="font-size:10px;color:${a.level === 'RED' ? 'var(--red)' : 'var(--amber)'};font-family:var(--font-mono);font-weight:600;margin-bottom:2px">${a.category}</div>
+          <div class="alert-detail">${a.message}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="badge ${a.level.toLowerCase()}">${a.level}</span>
+          <button class="btn btn-sm btn-ghost">View →</button>
+        </div>
+      </div>
+    `).join('') : `<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center">No ${containerId.includes('red') ? 'red' : 'amber'} alerts detected</div>`;
+  };
+
+  renderFeed(red, 'redAlertFeed');
+  renderFeed(amber, 'amberAlertFeed');
+}
+
+// ─── DEVELOPERS PAGE ─────────────────────────────────────
+function renderDevelopersPage() {
+  const tierColors = { AAA: 'var(--green)', AA: '#44ffaa', A: 'var(--blue)', B: 'var(--amber)', C: '#ff8844', D: 'var(--red)' };
+
+  const totalExposure = NEXUS_DATA.developers.reduce((s, d) => s + d.portfolioExposure, 0);
+  const defaults = NEXUS_DATA.developers.reduce((s, d) => s + d.pastDefaults, 0);
+  const distressed = NEXUS_DATA.developers.filter(d => d.riskScore < 50).length;
+
+  document.getElementById('devStats').innerHTML = `
+    <div class="stat-card cyan"><div class="stat-label">Total Developers</div><div class="stat-value">10</div><div class="stat-sub">Monitored sponsors</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total Portfolio Exposure</div><div class="stat-value">${formatCurrency(totalExposure)}</div><div class="stat-sub">Across all developers</div></div>
+    <div class="stat-card red"><div class="stat-label">Historical Defaults</div><div class="stat-value">${defaults}</div><div class="stat-sub">Across portfolio</div></div>
+    <div class="stat-card amber"><div class="stat-label">Distressed Developers</div><div class="stat-value">${distressed}</div><div class="stat-sub">Score below 50</div></div>
+  `;
+
+  document.getElementById('developerGrid').innerHTML = NEXUS_DATA.developers.map(d => {
+    const color = RiskEngine.getScoreColor(d.riskScore);
+    const tierColor = tierColors[d.tier] || 'var(--text-muted)';
+    const initials = d.name.split(' ').map(w => w[0]).slice(0, 2).join('');
+    const devProjects = allProjects.filter(p => p.developerId === d.id);
+    return `
+    <div class="dev-card" onclick="openDevDossier('${d.id}')">
+      <div class="dev-card-header">
+        <div class="dev-avatar" style="background:linear-gradient(135deg,${color}22,${color}44);color:${color};border:1px solid ${color}44">${initials}</div>
+        <div>
+          <div style="font-size:13px;font-weight:600">${d.name}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${d.hq} · Est. ${d.founded}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:${color}">${d.riskScore}</div>
+          <div style="font-size:8px;color:var(--text-muted)">RISK SCORE</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="tag" style="background:${tierColor}22;color:${tierColor}">TIER ${d.tier}</span>
+        <span style="font-size:10px;color:var(--text-muted)">${d.rating}</span>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label">
+          <span class="name">Portfolio Risk Score</span>
+          <span class="pct">${d.riskScore}/100</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${d.riskScore}%;background:${color}"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="text-align:center">
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700">${d.activeProjects}</div>
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase">Active</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:${d.pastDefaults > 0 ? 'var(--red)' : 'var(--green)'}">${d.pastDefaults}</div>
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase">Defaults</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700">${formatCurrency(d.portfolioExposure)}</div>
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase">Exposure</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── MARKETS PAGE ────────────────────────────────────────
+function renderMarketsPage() {
+  document.getElementById('marketGrid').innerHTML = NEXUS_DATA.marketData.map(m => {
+    const chgColor = m.priceChange >= 10 ? 'var(--green)' : m.priceChange >= 5 ? 'var(--amber)' : 'var(--text-secondary)';
+    return `
+    <div class="market-card">
+      <div class="market-card-city">
+        <div class="market-city-name">${m.city}</div>
+        <div class="market-city-sub">${m.quarter} · Absorption: ${m.absorption}%</div>
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px">
+            <span style="color:var(--text-muted)">DEMAND INDEX</span>
+            <span style="font-family:var(--font-mono)">${m.demandIndex}</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${m.demandIndex}%;background:${m.demandIndex >= 75 ? 'var(--green)' : 'var(--amber)'}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="market-price">
+        <div class="price-val">₹${m.avgPrice.toLocaleString()}</div>
+        <div style="font-size:8px;color:var(--text-muted)">per sq.ft.</div>
+        <div class="price-chg" style="color:${chgColor}">▲ ${m.priceChange}% QoQ</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMarketsCharts() {
+  NexusCharts.renderMarketPriceChart('marketPriceChart', NEXUS_DATA.marketData);
+  NexusCharts.renderAbsorptionChart('absorptionChart', NEXUS_DATA.marketData);
+}
+
+// ─── REPORTS PAGE ────────────────────────────────────────
+function populateReportSelect() {
+  const sel = document.getElementById('reportProjectSelect');
+  allProjects.forEach(p => {
+    const dev = getDev(p.developerId);
+    sel.innerHTML += `<option value="${p.id}">${p.name} — ${dev ? dev.name : ''} (${p.alertLevel})</option>`;
+  });
+}
+
+function renderReportsPage() {
+  const tbody = document.getElementById('reportsTableBody');
+  tbody.innerHTML = allProjects.map(p => {
+    const dev = getDev(p.developerId);
+    const loan = getLoan(p.loanId);
+    const color = RiskEngine.getScoreColor(p.riskScore);
+    return `<tr>
+      <td><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:9px;color:var(--text-muted)">${p.city}</div></td>
+      <td style="font-size:11px">${dev ? dev.name : '—'}</td>
+      <td><span class="badge ${p.alertLevel.toLowerCase()}">${p.alertLevel}</span></td>
+      <td><span style="font-family:var(--font-mono);font-weight:700;color:${color}">${p.riskScore}</span></td>
+      <td class="mono" style="font-size:11px">${loan ? formatCurrency(loan.outstandingAmount) : '—'}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="downloadProjectPDF('${p.id}')">📄 PDF</button></td>
+      <td><button class="btn btn-sm btn-ghost" onclick="downloadProjectCSV('${p.id}')">📊 CSV</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function generatePDFReport() {
+  const pid = document.getElementById('reportProjectSelect').value;
+  downloadProjectPDF(pid);
+}
+
+function generateCSVReport() {
+  const pid = document.getElementById('reportProjectSelect').value;
+  downloadProjectCSV(pid);
+}
+
+function downloadProjectPDF(projectId) {
+  const p = allProjects.find(x => x.id === projectId);
+  if (!p) return;
+  const dev = getDev(p.developerId);
+  const loan = getLoan(p.loanId);
+  const alerts = getProjectAlerts(p);
+  ReportGenerator.downloadPDF(p, dev, loan, alerts, p._scoreResult);
+}
+
+function downloadProjectCSV(projectId) {
+  const p = allProjects.find(x => x.id === projectId);
+  if (!p) return;
+  const dev = getDev(p.developerId);
+  const loan = getLoan(p.loanId);
+  const alerts = getProjectAlerts(p);
+  ReportGenerator.downloadCSV(p, dev, loan, alerts, p._scoreResult);
+}
+
+// ─── SCHEMA PAGE ─────────────────────────────────────────
+function renderSchemaPage() {
+  document.getElementById('sqlSchema').textContent = `-- NEXUS ASIA Database Schema
+-- Run in Supabase SQL Editor
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- DEVELOPERS table
+CREATE TABLE developers (
+  id           TEXT PRIMARY KEY,
+  name         TEXT NOT NULL,
+  hq           TEXT,
+  founded      INT,
+  total_projects INT DEFAULT 0,
+  active_projects INT DEFAULT 0,
+  past_delays  INT DEFAULT 0,
+  past_defaults INT DEFAULT 0,
+  portfolio_exposure BIGINT DEFAULT 0,
+  risk_score   INT DEFAULT 50,
+  tier         TEXT CHECK(tier IN ('AAA','AA','A','B','C','D')),
+  contact_person TEXT,
+  rating       TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- PROJECTS table
+CREATE TABLE projects (
+  id           TEXT PRIMARY KEY,
+  name         TEXT NOT NULL,
+  developer_id TEXT REFERENCES developers(id),
+  city         TEXT,
+  state        TEXT,
+  type         TEXT,
+  units        INT,
+  launch_date  DATE,
+  completion_date DATE,
+  description  TEXT,
+  risk_score   INT DEFAULT 50,
+  alert_level  TEXT DEFAULT 'GREEN' CHECK(alert_level IN ('GREEN','AMBER','RED')),
+  loan_id      TEXT,
+  construction_progress NUMERIC(5,2) DEFAULT 0,
+  scheduled_progress    NUMERIC(5,2) DEFAULT 0,
+  sales_velocity INT DEFAULT 0,
+  sales_target   INT DEFAULT 0,
+  units_sold     INT DEFAULT 0,
+  total_units    INT DEFAULT 0,
+  dscr         NUMERIC(6,3),
+  ltv          NUMERIC(5,2),
+  ltc          NUMERIC(5,2),
+  cost_overrun NUMERIC(6,2) DEFAULT 0,
+  escrow_balance BIGINT DEFAULT 0,
+  escrow_required BIGINT DEFAULT 0,
+  lat          NUMERIC(10,6),
+  lng          NUMERIC(10,6),
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- LOANS table
+CREATE TABLE loans (
+  id           TEXT PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  sanctioned_amount  BIGINT,
+  disbursed_amount   BIGINT,
+  outstanding_amount BIGINT,
+  interest_rate      NUMERIC(5,2),
+  loan_type    TEXT,
+  tenure       INT,
+  start_date   DATE,
+  end_date     DATE,
+  lender       TEXT,
+  status       TEXT DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','WATCH','NPA')),
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- FINANCIALS table
+CREATE TABLE financials (
+  id           UUID DEFAULT uuid_ossp() PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  period       DATE,
+  revenue      BIGINT,
+  expenses     BIGINT,
+  ebitda       BIGINT,
+  net_cashflow BIGINT,
+  dscr         NUMERIC(6,3),
+  collection_efficiency NUMERIC(5,2),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- CONSTRUCTION_UPDATES table
+CREATE TABLE construction_updates (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  update_date  DATE,
+  actual_progress    NUMERIC(5,2),
+  scheduled_progress NUMERIC(5,2),
+  milestone    TEXT,
+  notes        TEXT,
+  cost_to_date BIGINT,
+  revised_completion DATE,
+  reported_by  TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- SALES_UPDATES table
+CREATE TABLE sales_updates (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  update_month DATE,
+  units_sold_month   INT,
+  cumulative_sold    INT,
+  monthly_target     INT,
+  avg_price_psf      NUMERIC(10,2),
+  cancellations      INT DEFAULT 0,
+  collections_crore  NUMERIC(12,2),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RISK_SCORES table
+CREATE TABLE risk_scores (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  score_date   DATE,
+  total_score  INT,
+  alert_level  TEXT,
+  financial_health    NUMERIC(5,2),
+  construction_score  NUMERIC(5,2),
+  sales_score        NUMERIC(5,2),
+  cash_flow_score    NUMERIC(5,2),
+  sponsor_score      NUMERIC(5,2),
+  market_score       NUMERIC(5,2),
+  capital_stack_score NUMERIC(5,2),
+  regulatory_score   NUMERIC(5,2),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ALERTS table
+CREATE TABLE alerts (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id   TEXT REFERENCES projects(id),
+  type         TEXT CHECK(type IN ('RED','AMBER','GREEN')),
+  category     TEXT,
+  message      TEXT,
+  acknowledged BOOLEAN DEFAULT FALSE,
+  acknowledged_by TEXT,
+  acknowledged_at TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- MARKET_DATA table
+CREATE TABLE market_data (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  city         TEXT,
+  quarter      TEXT,
+  avg_price    NUMERIC(10,2),
+  price_change NUMERIC(6,2),
+  absorption   NUMERIC(5,2),
+  inventory    INT,
+  demand_index INT,
+  supply_pipeline INT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- PORTFOLIO_EXPOSURE table
+CREATE TABLE portfolio_exposure (
+  id           UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  snapshot_date DATE,
+  total_sanctioned BIGINT,
+  total_disbursed  BIGINT,
+  total_outstanding BIGINT,
+  npa_amount   BIGINT,
+  watch_amount BIGINT,
+  active_amount BIGINT,
+  green_count  INT,
+  amber_count  INT,
+  red_count    INT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INDEXES
+CREATE INDEX idx_projects_developer ON projects(developer_id);
+CREATE INDEX idx_projects_alert ON projects(alert_level);
+CREATE INDEX idx_projects_city ON projects(city);
+CREATE INDEX idx_loans_project ON loans(project_id);
+CREATE INDEX idx_loans_status ON loans(status);
+CREATE INDEX idx_alerts_project ON alerts(project_id);
+CREATE INDEX idx_alerts_type ON alerts(type);
+CREATE INDEX idx_risk_scores_project ON risk_scores(project_id);
+CREATE INDEX idx_construction_project ON construction_updates(project_id);
+CREATE INDEX idx_sales_project ON sales_updates(project_id);
+
+-- ROW LEVEL SECURITY (Supabase)
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE developers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated read access
+CREATE POLICY "auth_read" ON projects FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_read" ON loans FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_read" ON developers FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_read" ON alerts FOR SELECT TO authenticated USING (true);
+`;
+}
+
+// ─── PROJECT DOSSIER ─────────────────────────────────────
+function openDossier(projectId) {
+  const p = allProjects.find(x => x.id === projectId);
+  if (!p) return;
+  currentDossierProject = p;
+  currentDossierTab = 'overview';
+
+  const dev = getDev(p.developerId);
+  const loan = getLoan(p.loanId);
+  const score = p._scoreResult || { totalScore: p.riskScore, alertLevel: p.alertLevel, components: {} };
+  const color = RiskEngine.getScoreColor(score.totalScore);
+
+  document.getElementById('dossierTitle').textContent = p.name;
+  document.getElementById('dossierMeta').innerHTML = `
+    <span>📍 ${p.city}, ${p.state}</span>
+    <span>🏗 ${p.type}</span>
+    <span>👤 ${dev ? dev.name : '—'}</span>
+    <span>💳 ${loan ? loan.lender : '—'}</span>
+    <span>📋 ${p.id}</span>
+  `;
+  document.getElementById('dossierScoreVal').textContent = score.totalScore;
+  document.getElementById('dossierScoreVal').style.color = color;
+  document.getElementById('dossierBadge').innerHTML = `<span class="badge ${score.alertLevel.toLowerCase()}">${score.alertLevel}</span>`;
+
+  document.querySelectorAll('.dossier-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+
+  renderDossierTab('overview', p, dev, loan, score);
+  document.getElementById('dossierOverlay').classList.add('open');
+
+  setTimeout(() => {
+    NexusCharts.destroyChart('dossierGaugeChart');
+    NexusCharts.renderScoreGauge('dossierGaugeChart', score.totalScore);
+  }, 50);
+}
+
+function closeDossier() {
+  document.getElementById('dossierOverlay').classList.remove('open');
+  currentDossierProject = null;
+}
+
+function closeDossierOnBackdrop(e) {
+  if (e.target === document.getElementById('dossierOverlay')) closeDossier();
+}
+
+function switchDossierTab(tab, el) {
+  document.querySelectorAll('.dossier-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentDossierTab = tab;
+  const p = currentDossierProject;
+  if (!p) return;
+  const dev = getDev(p.developerId);
+  const loan = getLoan(p.loanId);
+  const score = p._scoreResult;
+  renderDossierTab(tab, p, dev, loan, score);
+}
+
+function renderDossierTab(tab, p, dev, loan, score) {
+  const body = document.getElementById('dossierBody');
+  const alerts = getProjectAlerts(p);
+  const salesPct = ((p.unitsSold / p.totalUnits) * 100).toFixed(1);
+  const cv = p.constructionProgress - p.scheduledProgress;
+  const escrowRatio = (p.escrowBalance / p.escrowRequired * 100).toFixed(1);
+
+  if (tab === 'overview') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Key Metrics</div><div class="section-line"></div></div>
+      <div class="metric-row">
+        <div class="metric-chip ${score.alertLevel.toLowerCase()}"><div class="label">Risk Score</div><div class="value">${score.totalScore}/100</div></div>
+        <div class="metric-chip ${p.dscr >= 1.3 ? 'green' : p.dscr >= 1.0 ? 'amber' : 'red'}"><div class="label">DSCR</div><div class="value">${p.dscr.toFixed(2)}x</div></div>
+        <div class="metric-chip ${p.ltv <= 65 ? 'green' : p.ltv <= 80 ? 'amber' : 'red'}"><div class="label">LTV</div><div class="value">${p.ltv}%</div></div>
+        <div class="metric-chip ${p.ltc <= 70 ? 'green' : p.ltc <= 85 ? 'amber' : 'red'}"><div class="label">LTC</div><div class="value">${p.ltc}%</div></div>
+        <div class="metric-chip ${p.costOverrun <= 5 ? 'green' : p.costOverrun <= 15 ? 'amber' : 'red'}"><div class="label">Cost Overrun</div><div class="value">${p.costOverrun.toFixed(1)}%</div></div>
+        <div class="metric-chip ${parseFloat(escrowRatio) >= 100 ? 'green' : parseFloat(escrowRatio) >= 80 ? 'amber' : 'red'}"><div class="label">Escrow Cover</div><div class="value">${escrowRatio}%</div></div>
+      </div>
+
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Project Profile</div><div class="section-line"></div></div>
+      <table class="info-table">
+        <tr><td>Project ID</td><td style="font-family:var(--font-mono)">${p.id}</td></tr>
+        <tr><td>Type</td><td>${p.type}</td></tr>
+        <tr><td>Total Units</td><td style="font-family:var(--font-mono)">${p.totalUnits.toLocaleString()}</td></tr>
+        <tr><td>Launch Date</td><td>${new Date(p.launchDate).toLocaleDateString('en-IN')}</td></tr>
+        <tr><td>Target Completion</td><td>${new Date(p.completionDate).toLocaleDateString('en-IN')}</td></tr>
+        <tr><td>Lender</td><td>${loan ? loan.lender : '—'}</td></tr>
+        <tr><td>Outstanding Loan</td><td style="font-family:var(--font-mono);font-weight:600">${loan ? formatCurrency(loan.outstandingAmount) : '—'}</td></tr>
+        <tr><td>Loan Status</td><td><span class="badge ${loan && loan.status === 'ACTIVE' ? 'green' : loan && loan.status === 'NPA' ? 'red' : 'amber'}">${loan ? loan.status : '—'}</span></td></tr>
+      </table>
+
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Description</div><div class="section-line"></div></div>
+      <p style="font-size:12px;color:var(--text-secondary);line-height:1.6">${p.description}</p>
+
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadProjectPDF('${p.id}')">📄 PDF Report</button>
+        <button class="btn btn-secondary" onclick="downloadProjectCSV('${p.id}')">📊 CSV Data</button>
+      </div>
+    `;
+  }
+
+  else if (tab === 'risk') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Risk Component Scores</div><div class="section-line"></div></div>
+      <div class="chart-container chart-h-md" style="margin-bottom:16px">
+        <canvas id="dossierComponentChart"></canvas>
+      </div>
+      <div class="section-header" style="margin-top:8px"><div class="section-title">Score History (6 Months)</div><div class="section-line"></div></div>
+      <div class="chart-container chart-h-md">
+        <canvas id="dossierHistoryChart"></canvas>
+      </div>
+    `;
+    setTimeout(() => {
+      if (score && score.components) {
+        NexusCharts.renderRiskComponentsBar('dossierComponentChart', score.components);
+        NexusCharts.renderScoreHistory('dossierHistoryChart', NexusCharts.generateMockHistory(score.totalScore));
+      }
+    }, 50);
+  }
+
+  else if (tab === 'construction') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Construction Progress</div><div class="section-line"></div></div>
+      <div class="metric-row">
+        <div class="metric-chip ${cv >= 0 ? 'green' : cv >= -8 ? 'amber' : 'red'}"><div class="label">Actual Progress</div><div class="value">${p.constructionProgress}%</div></div>
+        <div class="metric-chip blue"><div class="label">Scheduled</div><div class="value">${p.scheduledProgress}%</div></div>
+        <div class="metric-chip ${cv >= 0 ? 'green' : cv >= -8 ? 'amber' : 'red'}"><div class="label">Variance</div><div class="value">${cv >= 0 ? '+' : ''}${cv.toFixed(1)}%</div></div>
+        <div class="metric-chip ${p.costOverrun <= 5 ? 'green' : p.costOverrun <= 15 ? 'amber' : 'red'}"><div class="label">Cost Overrun</div><div class="value">${p.costOverrun.toFixed(1)}%</div></div>
+      </div>
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Progress Timeline</div><div class="section-line"></div></div>
+      <div class="chart-container chart-h-lg">
+        <canvas id="dossierConstrChart"></canvas>
+      </div>
+    `;
+    setTimeout(() => {
+      NexusCharts.renderConstructionChart('dossierConstrChart', NexusCharts.generateMockConstruction(p.constructionProgress, p.scheduledProgress));
+    }, 50);
+  }
+
+  else if (tab === 'sales') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Sales Performance</div><div class="section-line"></div></div>
+      <div class="metric-row">
+        <div class="metric-chip ${p.salesVelocity >= p.salesTarget ? 'green' : p.salesVelocity >= p.salesTarget * 0.7 ? 'amber' : 'red'}"><div class="label">Monthly Velocity</div><div class="value">${p.salesVelocity} units</div></div>
+        <div class="metric-chip blue"><div class="label">Monthly Target</div><div class="value">${p.salesTarget} units</div></div>
+        <div class="metric-chip ${parseFloat(salesPct) >= 70 ? 'green' : 'amber'}"><div class="label">Units Sold</div><div class="value">${p.unitsSold}/${p.totalUnits}</div></div>
+        <div class="metric-chip cyan"><div class="label">Sold %</div><div class="value">${salesPct}%</div></div>
+      </div>
+      <div class="progress-section" style="margin-top:14px">
+        <div class="progress-label"><span class="name">Overall Sales Progress</span><span class="pct">${salesPct}%</span></div>
+        <div class="progress-track" style="height:10px">
+          <div class="progress-fill" style="width:${salesPct}%;background:var(--blue)"></div>
+        </div>
+      </div>
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Monthly Sales vs Target</div><div class="section-line"></div></div>
+      <div class="chart-container chart-h-lg">
+        <canvas id="dossierSalesChart"></canvas>
+      </div>
+    `;
+    setTimeout(() => {
+      NexusCharts.renderSalesChart('dossierSalesChart', NexusCharts.generateMockSales(p.salesVelocity, p.salesTarget));
+    }, 50);
+  }
+
+  else if (tab === 'financial') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Financial Metrics</div><div class="section-line"></div></div>
+      <div class="metric-row">
+        <div class="metric-chip ${p.dscr >= 1.3 ? 'green' : p.dscr >= 1.0 ? 'amber' : 'red'}"><div class="label">DSCR</div><div class="value">${p.dscr.toFixed(2)}x</div></div>
+        <div class="metric-chip ${p.ltv <= 65 ? 'green' : p.ltv <= 80 ? 'amber' : 'red'}"><div class="label">LTV</div><div class="value">${p.ltv}%</div></div>
+        <div class="metric-chip ${p.ltc <= 70 ? 'green' : p.ltc <= 85 ? 'amber' : 'red'}"><div class="label">LTC</div><div class="value">${p.ltc}%</div></div>
+        <div class="metric-chip ${p.costOverrun <= 5 ? 'green' : p.costOverrun <= 15 ? 'amber' : 'red'}"><div class="label">Cost Overrun</div><div class="value">${p.costOverrun.toFixed(1)}%</div></div>
+      </div>
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Loan Structure</div><div class="section-line"></div></div>
+      <table class="info-table">
+        <tr><td>Lender</td><td>${loan ? loan.lender : '—'}</td></tr>
+        <tr><td>Loan Type</td><td>${loan ? loan.loanType : '—'}</td></tr>
+        <tr><td>Sanctioned Amount</td><td style="font-family:var(--font-mono)">${loan ? formatCurrency(loan.sanctionedAmount) : '—'}</td></tr>
+        <tr><td>Disbursed Amount</td><td style="font-family:var(--font-mono)">${loan ? formatCurrency(loan.disbursedAmount) : '—'}</td></tr>
+        <tr><td>Outstanding Balance</td><td style="font-family:var(--font-mono);font-weight:700">${loan ? formatCurrency(loan.outstandingAmount) : '—'}</td></tr>
+        <tr><td>Interest Rate</td><td>${loan ? loan.interestRate + '% p.a.' : '—'}</td></tr>
+        <tr><td>Tenure</td><td>${loan ? loan.tenure + ' months' : '—'}</td></tr>
+        <tr><td>Maturity Date</td><td>${loan ? new Date(loan.endDate).toLocaleDateString('en-IN') : '—'}</td></tr>
+        <tr><td>Loan Status</td><td><span class="badge ${loan && loan.status === 'ACTIVE' ? 'green' : loan && loan.status === 'NPA' ? 'red' : 'amber'}">${loan ? loan.status : '—'}</span></td></tr>
+      </table>
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Cash Flow Health</div><div class="section-line"></div></div>
+      <table class="info-table">
+        <tr><td>Escrow Balance</td><td style="font-family:var(--font-mono)">${formatCurrency(p.escrowBalance)}</td></tr>
+        <tr><td>Escrow Required</td><td style="font-family:var(--font-mono)">${formatCurrency(p.escrowRequired)}</td></tr>
+        <tr><td>Coverage Ratio</td><td style="font-family:var(--font-mono);color:${parseFloat(escrowRatio) >= 100 ? 'var(--green)' : parseFloat(escrowRatio) >= 80 ? 'var(--amber)' : 'var(--red)'}">${escrowRatio}%</td></tr>
+        <tr><td>Surplus / (Deficit)</td><td style="font-family:var(--font-mono);color:${p.escrowBalance >= p.escrowRequired ? 'var(--green)' : 'var(--red)'}">${formatCurrency(Math.abs(p.escrowBalance - p.escrowRequired))} ${p.escrowBalance >= p.escrowRequired ? 'surplus' : 'deficit'}</td></tr>
+      </table>
+    `;
+  }
+
+  else if (tab === 'sponsor') {
+    if (!dev) { body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:20px">Developer not found.</div>'; return; }
+    const tierColors = { AAA: 'var(--green)', AA: '#44ffaa', A: 'var(--blue)', B: 'var(--amber)', C: '#ff8844', D: 'var(--red)' };
+    const tierColor = tierColors[dev.tier] || 'var(--text-muted)';
+    const devColor = RiskEngine.getScoreColor(dev.riskScore);
+    const devProjects = allProjects.filter(pp => pp.developerId === dev.id);
+
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Sponsor Profile</div><div class="section-line"></div></div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:14px;background:var(--bg-surface);border-radius:var(--radius);border:1px solid var(--border)">
+        <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,${devColor}22,${devColor}44);border:1px solid ${devColor}44;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:700;color:${devColor}">${dev.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:600">${dev.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary)">${dev.hq} · Founded ${dev.founded} · ${dev.rating}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-mono);font-size:28px;font-weight:700;color:${devColor}">${dev.riskScore}</div>
+          <div style="font-size:8px;color:var(--text-muted)">DEVELOPER SCORE</div>
+          <span style="font-size:9px;padding:2px 8px;border-radius:3px;background:${tierColor}22;color:${tierColor};font-family:var(--font-mono)">TIER ${dev.tier}</span>
+        </div>
+      </div>
+      <table class="info-table">
+        <tr><td>Total Projects</td><td style="font-family:var(--font-mono)">${dev.totalProjects}</td></tr>
+        <tr><td>Active Projects</td><td style="font-family:var(--font-mono)">${dev.activeProjects}</td></tr>
+        <tr><td>Portfolio Exposure</td><td style="font-family:var(--font-mono);font-weight:600">${formatCurrency(dev.portfolioExposure)}</td></tr>
+        <tr><td>Past Delays</td><td style="font-family:var(--font-mono);color:${dev.pastDelays > 5 ? 'var(--red)' : dev.pastDelays > 2 ? 'var(--amber)' : 'var(--green)'}">${dev.pastDelays}</td></tr>
+        <tr><td>Past Defaults</td><td style="font-family:var(--font-mono);color:${dev.pastDefaults > 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">${dev.pastDefaults}</td></tr>
+        <tr><td>Contact Person</td><td>${dev.contactPerson}</td></tr>
+      </table>
+      <div class="section-header" style="margin-top:16px"><div class="section-title">Projects in This Portfolio</div><div class="section-line"></div></div>
+      ${devProjects.map(pp => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openDossier('${pp.id}')">
+          <span class="badge ${pp.alertLevel.toLowerCase()}">${pp.alertLevel}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500">${pp.name}</div>
+            <div style="font-size:10px;color:var(--text-muted)">${pp.city} · ${pp.type}</div>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:12px;font-weight:600;color:${RiskEngine.getScoreColor(pp.riskScore)}">${pp.riskScore}</span>
+        </div>
+      `).join('')}
+    `;
+  }
+
+  else if (tab === 'alerts') {
+    body.innerHTML = `
+      <div class="section-header"><div class="section-title">Active Alerts for ${p.name}</div><div class="section-line"></div></div>
+      ${alerts.length === 0 ? '<div style="color:var(--green);font-size:12px;padding:20px;text-align:center">✓ No active alerts. All metrics within normal parameters.</div>' : alerts.map(a => `
+        <div style="padding:12px;border-radius:var(--radius);border-left:3px solid ${RiskEngine.getAlertColor(a.level)};background:${RiskEngine.getAlertBg(a.level)};margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span class="badge ${a.level.toLowerCase()}">${a.level}</span>
+            <span style="font-size:11px;font-weight:600;color:${RiskEngine.getAlertColor(a.level)}">${a.category}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary)">${a.message}</div>
+        </div>
+      `).join('')}
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadProjectPDF('${p.id}')">📄 Full Risk Report</button>
+      </div>
+    `;
+  }
+}
+
+// ─── DEVELOPER DOSSIER ───────────────────────────────────
+function openDevDossier(devId) {
+  const devProjects = allProjects.filter(p => p.developerId === devId);
+  if (devProjects.length > 0) openDossier(devProjects[0].id);
+}
+
+// ─── SEARCH ──────────────────────────────────────────────
+function initSearch() {
+  const input = document.getElementById('globalSearch');
+  const results = document.getElementById('searchResults');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.classList.remove('visible'); return; }
+
+    const matches = allProjects.filter(p => {
+      const dev = getDev(p.developerId);
+      const devName = dev ? dev.name.toLowerCase() : '';
+      return p.name.toLowerCase().includes(q) || devName.includes(q) || p.city.toLowerCase().includes(q) || p.type.toLowerCase().includes(q);
+    }).slice(0, 8);
+
+    if (matches.length === 0) { results.classList.remove('visible'); return; }
+
+    results.innerHTML = matches.map(p => {
+      const dev = getDev(p.developerId);
+      const color = RiskEngine.getScoreColor(p.riskScore);
+      return `<div class="search-result-item" onclick="selectSearchResult('${p.id}')">
+        <div class="search-result-name" style="display:flex;justify-content:space-between">
+          <span>${p.name}</span>
+          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:${color}">${p.riskScore}</span>
+        </div>
+        <div class="search-result-meta">${p.city} · ${dev ? dev.name : '—'} · <span class="badge ${p.alertLevel.toLowerCase()}" style="font-size:8px;padding:1px 5px">${p.alertLevel}</span></div>
+      </div>`;
+    }).join('');
+
+    results.classList.add('visible');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.sidebar-search')) results.classList.remove('visible');
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { results.classList.remove('visible'); input.value = ''; }
+  });
+}
+
+function selectSearchResult(projectId) {
+  document.getElementById('globalSearch').value = '';
+  document.getElementById('searchResults').classList.remove('visible');
+  openDossier(projectId);
+}
+
+// ─── UPLOAD MODAL ────────────────────────────────────────
+function openUploadModal() { document.getElementById('uploadModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  const status = document.getElementById('fileStatus');
+  status.innerHTML = `<span style="color:var(--cyan)">✓ File selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)</span>`;
+  document.getElementById('dropZone').innerHTML = `<div class="drop-zone-icon">✅</div><div class="drop-zone-text" style="color:var(--green)">${file.name}</div><div class="drop-zone-sub">Ready to process</div>`;
+}
+
+function processUpload() {
+  const status = document.getElementById('fileStatus');
+  status.innerHTML = '<span style="color:var(--amber)">⚙ Processing data... (simulated)</span>';
+  setTimeout(() => {
+    status.innerHTML = '<span style="color:var(--green)">✓ Data ingested successfully. Dashboard will refresh shortly.</span>';
+    setTimeout(() => closeModal('uploadModal'), 2000);
+  }, 1500);
+}
+</script>
+</body>
+</html>

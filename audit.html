@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Audit Trail</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>AUDIT TRAIL</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-sm btn-secondary" onclick="exportAudit()">↓ Export CSV</button>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+
+      <div class="stat-grid" id="auditStats"></div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" class="form-input" style="max-width:280px" id="auditSearch" placeholder="Search by user, action, field…" oninput="filterAudit()">
+        <select class="form-select" style="width:auto" id="auditTable" onchange="filterAudit()">
+          <option value="">All Tables</option>
+          <option>projects</option><option>loans</option><option>covenants</option>
+          <option>alerts</option><option>risk_scores</option>
+        </select>
+        <select class="form-select" style="width:auto" id="auditAction" onchange="filterAudit()">
+          <option value="">All Actions</option>
+          <option>UPDATE</option><option>INSERT</option><option>DELETE</option><option>LOGIN</option><option>REPORT_GENERATED</option>
+        </select>
+        <select class="form-select" style="width:auto" id="auditUser" onchange="filterAudit()">
+          <option value="">All Users</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">🔍 Change <span class="accent">History</span></span>
+          <div class="panel-actions"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)" id="auditCount">0 entries</span></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>TIMESTAMP</th><th>USER</th><th>ROLE</th><th>ACTION</th><th>TABLE</th><th>RECORD</th><th>CHANGES</th></tr>
+            </thead>
+            <tbody id="auditBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="data/seed-data.js"></script>
+<script>
+const projects = NEXUS_DATA.projects;
+const users = [
+  { email:'cro@nexusasia.fund',     name:'Vikram Nair',    role:'CRO' },
+  { email:'pm@nexusasia.fund',      name:'Priya Shah',     role:'PM' },
+  { email:'analyst@nexusasia.fund', name:'Raj Mehta',      role:'ANALYST' },
+  { email:'analyst2@nexusasia.fund',name:'Ankit Verma',    role:'ANALYST' },
+];
+
+const ACTIONS = {
+  UPDATE: { color:'var(--amber)', label:'UPDATE' },
+  INSERT: { color:'var(--green)', label:'INSERT' },
+  DELETE: { color:'var(--red)',   label:'DELETE' },
+  LOGIN:  { color:'var(--blue)',  label:'LOGIN' },
+  REPORT_GENERATED: { color:'var(--purple)', label:'REPORT' },
+  ALERT_ACKNOWLEDGED: { color:'var(--cyan)', label:'ACK' }
+};
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randDays(n) { const d = new Date(); d.setDate(d.getDate() - Math.floor(Math.random()*n)); return d; }
+
+const AUDIT_LOG = [];
+const tables = ['projects','loans','covenants','alerts','risk_scores'];
+const fields  = {
+  projects: ['risk_score','alert_level','construction_progress','dscr','escrow_balance','cost_overrun','sales_velocity'],
+  loans:    ['status','outstanding_amount','days_past_due'],
+  covenants:['current_value','is_breached','waiver_granted','waiver_notes'],
+  alerts:   ['acknowledged','acknowledged_by'],
+  risk_scores:['total_score','alert_level']
+};
+
+// Generate realistic audit log
+for (let i = 0; i < 120; i++) {
+  const user    = rand(users);
+  const table   = rand(tables);
+  const action  = rand(['UPDATE','UPDATE','UPDATE','INSERT','ALERT_ACKNOWLEDGED','REPORT_GENERATED','LOGIN']);
+  const project = rand(projects);
+  const field   = rand(fields[table] || ['value']);
+  const ts      = randDays(60);
+  let changes = '';
+  if (action === 'UPDATE') {
+    if (field === 'risk_score')           changes = `risk_score: ${50+Math.floor(Math.random()*40)} → ${50+Math.floor(Math.random()*40)}`;
+    else if (field === 'alert_level')     changes = `alert_level: GREEN → AMBER`;
+    else if (field === 'construction_progress') changes = `construction_progress: ${40+Math.floor(Math.random()*20)}% → ${60+Math.floor(Math.random()*20)}%`;
+    else if (field === 'dscr')            changes = `dscr: ${(1+Math.random()*0.5).toFixed(2)} → ${(1+Math.random()*0.5).toFixed(2)}`;
+    else if (field === 'escrow_balance')  changes = `escrow_balance updated`;
+    else if (field === 'status')          changes = `status: ACTIVE → WATCH`;
+    else if (field === 'is_breached')     changes = `is_breached: false → true`;
+    else                                  changes = `${field} updated`;
+  } else if (action === 'REPORT_GENERATED') {
+    changes = `PDF report generated for ${project.name}`;
+  } else if (action === 'ALERT_ACKNOWLEDGED') {
+    changes = `Alert acknowledged: ${rand(['Construction Delay','DSCR Breach','Escrow Deficit'])}`;
+  } else if (action === 'LOGIN') {
+    changes = `Signed in from ${rand(['Mumbai','Bengaluru','Delhi','Singapore'])}`;
+  } else {
+    changes = `New ${table.replace('_',' ')} record created`;
+  }
+
+  AUDIT_LOG.push({
+    id: i, ts, user, action, table, entityId: project.id,
+    entityName: project.name, changes, field
+  });
+}
+
+AUDIT_LOG.sort((a,b) => b.ts - a.ts);
+
+// Populate user filter
+const userSel = document.getElementById('auditUser');
+users.forEach(u => userSel.innerHTML += `<option value="${u.email}">${u.name}</option>`);
+
+let filtered = [...AUDIT_LOG];
+
+function filterAudit() {
+  const q      = document.getElementById('auditSearch').value.toLowerCase();
+  const table  = document.getElementById('auditTable').value;
+  const action = document.getElementById('auditAction').value;
+  const user   = document.getElementById('auditUser').value;
+  filtered = AUDIT_LOG.filter(e => {
+    if (q      && !e.changes.toLowerCase().includes(q) && !e.user.name.toLowerCase().includes(q) && !e.entityName.toLowerCase().includes(q)) return false;
+    if (table  && e.table  !== table)      return false;
+    if (action && e.action !== action)     return false;
+    if (user   && e.user.email !== user)   return false;
+    return true;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  document.getElementById('auditCount').textContent = `${filtered.length} entries`;
+  document.getElementById('auditBody').innerHTML = filtered.map(e => {
+    const ac = ACTIONS[e.action] || { color:'var(--text-muted)', label:e.action };
+    return `<tr>
+      <td style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);white-space:nowrap">
+        ${e.ts.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'})}
+      </td>
+      <td>
+        <div style="font-size:12px;font-weight:500">${e.user.name}</div>
+        <div style="font-size:9px;color:var(--text-muted)">${e.user.email}</div>
+      </td>
+      <td><span class="role-badge role-${e.user.role.toLowerCase()}">${e.user.role}</span></td>
+      <td><span style="font-family:var(--font-mono);font-size:9px;padding:2px 7px;border-radius:3px;background:${ac.color}22;color:${ac.color};border:1px solid ${ac.color}44">${ac.label}</span></td>
+      <td style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary)">${e.table}</td>
+      <td>
+        <div style="font-size:11px;font-weight:500">${e.entityName}</div>
+        <div style="font-size:9px;color:var(--text-muted)">${e.entityId}</div>
+      </td>
+      <td style="font-size:11px;color:var(--text-secondary);max-width:300px">${e.changes}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Stats
+const today = new Date(); today.setHours(0,0,0,0);
+const todayCount = AUDIT_LOG.filter(e => e.ts >= today).length;
+const updates = AUDIT_LOG.filter(e => e.action === 'UPDATE').length;
+const riskUpdates = AUDIT_LOG.filter(e => e.table === 'risk_scores').length;
+document.getElementById('auditStats').innerHTML = `
+  <div class="stat-card cyan"><div class="stat-label">Total Events (60d)</div><div class="stat-value">${AUDIT_LOG.length}</div><div class="stat-sub">Full audit trail</div></div>
+  <div class="stat-card blue"><div class="stat-label">Today's Changes</div><div class="stat-value">${todayCount}</div><div class="stat-sub">Last 24 hours</div></div>
+  <div class="stat-card amber"><div class="stat-label">Field Updates</div><div class="stat-value">${updates}</div><div class="stat-sub">Data modifications</div></div>
+  <div class="stat-card green"><div class="stat-label">Risk Rescores</div><div class="stat-value">${riskUpdates}</div><div class="stat-sub">Score recalculations</div></div>
+`;
+
+function exportAudit() {
+  const rows = [
+    ['Timestamp','User','Role','Action','Table','Entity','Changes'],
+    ...filtered.map(e => [e.ts.toISOString(), e.user.name, e.user.role, e.action, e.table, e.entityName, e.changes])
+  ];
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = `NEXUS_AuditTrail_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+renderTable();
+document.getElementById('sidebar').innerHTML = `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item active" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>

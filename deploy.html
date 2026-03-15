@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Deploy Guide</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.step-card { background:var(--bg-dark); border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:20px; overflow:hidden; }
+.step-header { background:var(--bg-mid); padding:14px 20px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--border); }
+.step-num { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;font-weight:700;color:#000;flex-shrink:0; }
+.step-title { font-size:15px;font-weight:600; }
+.step-subtitle { font-size:11px;color:var(--text-muted);margin-top:2px; }
+.step-body { padding:20px; }
+.step-body p { font-size:12px; color:var(--text-secondary); line-height:1.7; margin-bottom:10px; }
+.step-body ol { padding-left:20px; font-size:12px; color:var(--text-secondary); line-height:2; }
+.step-body ol li { margin-bottom:4px; }
+.step-body strong { color:var(--text-primary); }
+.cmd { background:var(--bg-deep); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; font-family:var(--font-mono); font-size:11px; color:var(--cyan); display:block; margin:10px 0; overflow-x:auto; position:relative; }
+.cmd-group { background:var(--bg-deep); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin:10px 0; font-family:var(--font-mono); font-size:11px; line-height:2; }
+.cmd-line { color:var(--cyan); display:block; }
+.cmd-comment { color:var(--text-muted); font-style:italic; }
+.img-placeholder { background:var(--bg-surface); border:1px dashed var(--border-bright); border-radius:var(--radius); padding:20px; text-align:center; color:var(--text-muted); font-size:11px; margin:10px 0; }
+.warn-box { background:rgba(255,170,0,0.06); border:1px solid rgba(255,170,0,0.2); border-left:3px solid var(--amber); border-radius:var(--radius); padding:12px 16px; margin:12px 0; font-size:11px; color:var(--text-secondary); line-height:1.7; }
+.ok-box   { background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.2); border-left:3px solid var(--green); border-radius:var(--radius); padding:12px 16px; margin:12px 0; font-size:11px; color:var(--text-secondary); line-height:1.7; }
+.note-box  { background:rgba(0,170,255,0.06); border:1px solid rgba(0,170,255,0.2); border-left:3px solid var(--blue); border-radius:var(--radius); padding:12px 16px; margin:12px 0; font-size:11px; color:var(--text-secondary); line-height:1.7; }
+.screen-step { display:flex; align-items:flex-start; gap:14px; padding:12px 0; border-bottom:1px solid var(--border); }
+.screen-step:last-child { border-bottom:none; }
+.screen-num { width:22px;height:22px;border-radius:50%;background:var(--cyan);color:#000;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px; }
+.screen-text { font-size:12px; color:var(--text-secondary); line-height:1.7; }
+.screen-text strong { color:var(--text-primary); }
+.breadcrumb-path { font-family:var(--font-mono); font-size:11px; color:var(--cyan); background:rgba(0,255,204,0.06); padding:2px 8px; border-radius:3px; display:inline-block; }
+.file-tree { background:var(--bg-deep); border:1px solid var(--border); border-radius:var(--radius); padding:14px; font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); line-height:2; }
+.file-tree .folder { color:var(--cyan); }
+.file-tree .file   { color:var(--text-secondary); margin-left:20px; }
+.file-tree .note   { color:var(--text-muted); font-style:italic; margin-left:20px; }
+.copy-btn-inline { cursor:pointer; background:var(--bg-surface); border:1px solid var(--border); color:var(--text-muted); padding:3px 8px; border-radius:3px; font-size:9px; font-family:var(--font-mono); float:right; transition:all 0.15s; }
+.copy-btn-inline:hover { border-color:var(--cyan); color:var(--cyan); }
+</style>
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>DEPLOYMENT GUIDE</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <a href="index.html" class="btn btn-sm btn-primary">Launch Terminal →</a>
+        <a href="schema.html" class="btn btn-sm btn-ghost">DB Schema</a>
+      </div>
+    </div>
+    <div class="page-content" style="max-width:900px;margin:0 auto">
+
+      <div style="padding:20px 0">
+        <div style="font-size:22px;font-weight:700;margin-bottom:6px">🚀 Deploy NEXUS ASIA</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Complete step-by-step guide — GitHub Pages + Supabase. No coding experience needed.</div>
+
+        <div class="ok-box">
+          ✅ <strong>What you'll have at the end:</strong> A live credit intelligence terminal at a real URL (e.g. <code style="font-family:var(--font-mono)">https://yourfund.github.io/nexus-asia/</code>), connected to a live database, accessible from any browser including mobile.
+        </div>
+        <div class="note-box">
+          💡 <strong>Time needed:</strong> About 30–45 minutes total. Free to deploy. GitHub and Supabase both have generous free tiers. No credit card required.
+        </div>
+      </div>
+
+      <!-- PHASE 1: GitHub -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">A</div>
+          <div>
+            <div class="step-title">Get the files onto GitHub</div>
+            <div class="step-subtitle">GitHub hosts your frontend for free — no server needed</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">~10 min</span>
+        </div>
+        <div class="step-body">
+
+          <div style="font-weight:600;margin-bottom:8px;font-size:13px">Step 1 — Create a GitHub account</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">Go to <strong>github.com</strong> → click <strong>Sign up</strong> → enter your email, create password, choose username (e.g. <code style="font-family:var(--font-mono)">nexusasia-fund</code>)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Verify your email address when GitHub sends the confirmation email</div>
+          </div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 2 — Create a new repository</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">Click the <strong>+</strong> button at top right → <strong>New repository</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Repository name: <span class="breadcrumb-path">nexus-asia</span> (exactly this, lowercase, no spaces)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Set to <strong>Public</strong> (required for free GitHub Pages hosting)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">4</div>
+            <div class="screen-text">Click <strong>Create repository</strong></div>
+          </div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 3 — Upload your files</div>
+          <div class="note-box">
+            You have the ZIP file from Claude. Unzip it — you should see a folder called <code style="font-family:var(--font-mono)">nexus-v2</code> containing all the HTML, CSS, JS files.
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">On your new empty repository page, click <strong>"uploading an existing file"</strong> link</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Open your unzipped <code style="font-family:var(--font-mono)">nexus-v2</code> folder, select ALL files and folders inside it, drag them onto the GitHub upload area</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text"><strong>Important:</strong> You want GitHub to see files like <code style="font-family:var(--font-mono)">index.html</code> at the ROOT of the repo, not inside a subfolder. The final structure must look like this:</div>
+          </div>
+          <div class="file-tree">
+            <span class="folder">nexus-asia/  (your repo root)</span>
+            <span class="file">├── index.html</span>
+            <span class="file">├── login.html</span>
+            <span class="file">├── covenants.html</span>
+            <span class="file">├── waterfall.html</span>
+            <span class="file">├── stress.html</span>
+            <span class="file">├── schedule.html</span>
+            <span class="file">├── vault.html</span>
+            <span class="file">├── audit.html</span>
+            <span class="file">├── schema.html</span>
+            <span class="file">├── deploy.html</span>
+            <span class="folder">├── css/</span>
+            <span class="note">│   └── styles.css</span>
+            <span class="folder">├── js/</span>
+            <span class="note">│   ├── config.js   ← you'll edit this</span>
+            <span class="note">│   ├── scoring-engine.js</span>
+            <span class="note">│   ├── charts.js</span>
+            <span class="note">│   ├── report-generator.js</span>
+            <span class="note">│   └── supabase-client.js</span>
+            <span class="folder">└── data/</span>
+            <span class="note">    └── seed-data.js</span>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">4</div>
+            <div class="screen-text">Scroll down → click <strong>Commit changes</strong> (green button). GitHub saves your files.</div>
+          </div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 4 — Enable GitHub Pages</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In your repo, click <strong>Settings</strong> tab (top of the page)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">In the left sidebar, click <strong>Pages</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Under "Source": select <strong>Deploy from a branch</strong> → Branch: <strong>main</strong> → Folder: <strong>/ (root)</strong> → click <strong>Save</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">4</div>
+            <div class="screen-text">Wait 2–3 minutes. Refresh. You'll see a green box: <strong>"Your site is live at https://YOUR_USERNAME.github.io/nexus-asia/"</strong></div>
+          </div>
+          <div class="ok-box">✅ Your terminal is now live! Visit the URL. It will run on <strong>offline seed data</strong> automatically until you connect Supabase in Part B.</div>
+        </div>
+      </div>
+
+      <!-- PHASE 2: Supabase -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">B</div>
+          <div>
+            <div class="step-title">Set up Supabase (your live database)</div>
+            <div class="step-subtitle">Supabase gives you a PostgreSQL database + auth + file storage — all free</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">~15 min</span>
+        </div>
+        <div class="step-body">
+
+          <div style="font-weight:600;margin-bottom:8px;font-size:13px">Step 1 — Create Supabase account and project</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">Go to <strong>supabase.com</strong> → click <strong>Start your project</strong> → sign in with GitHub (easiest)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Click <strong>New project</strong> → choose your organisation → set:<br>
+              <strong>Name:</strong> nexus-asia<br>
+              <strong>Database password:</strong> create a strong password (save it!)<br>
+              <strong>Region:</strong> choose nearest to your users (e.g. Singapore for Asia)
+            </div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Click <strong>Create new project</strong>. Wait ~2 minutes for it to spin up.</div>
+          </div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 2 — Get your API keys</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In your Supabase project dashboard, click <strong>Settings</strong> (gear icon, left sidebar) → <strong>API</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">You'll see two important values. Copy both:
+              <br>• <strong>Project URL</strong>: looks like <code style="font-family:var(--font-mono)">https://abcdefghijk.supabase.co</code>
+              <br>• <strong>anon public</strong> key: a long string starting with <code style="font-family:var(--font-mono)">eyJ...</code>
+            </div>
+          </div>
+          <div class="warn-box">⚠️ <strong>The "anon public" key is safe to include in your frontend code.</strong> It's designed to be public. Never use the "service_role" key in frontend code — it bypasses security.</div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 3 — Add your keys to config.js</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In your GitHub repository, click on <strong>js/config.js</strong> → click the <strong>pencil (edit) icon</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Replace lines 10–11 with your actual values:</div>
+          </div>
+          <div class="cmd-group">
+            <span class="cmd-comment">// Replace these two lines:</span>
+            <span class="cmd-line">window.__NEXUS_SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';</span>
+            <span class="cmd-line">window.__NEXUS_SUPABASE_ANON = 'YOUR_ANON_PUBLIC_KEY_HERE';</span>
+            <span class="cmd-comment">// ↓ Becomes (example):</span>
+            <span class="cmd-line">window.__NEXUS_SUPABASE_URL  = 'https://abcdefghijk.supabase.co';</span>
+            <span class="cmd-line">window.__NEXUS_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';</span>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Scroll down → click <strong>Commit changes</strong>. GitHub Pages will rebuild in ~60 seconds.</div>
+          </div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 4 — Run the database schema</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In Supabase dashboard, click <strong>SQL Editor</strong> (left sidebar, looks like a terminal icon)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Go to your live site → click <strong>DB Schema</strong> page in the sidebar → click <strong>"📋 Copy Full SQL"</strong> button at top right</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Paste the SQL into the Supabase SQL Editor → click <strong>Run</strong> (or press Ctrl+Enter)</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">4</div>
+            <div class="screen-text">You should see: <strong style="color:var(--green)">Success. No rows returned.</strong> — this means all 12 tables were created.</div>
+          </div>
+          <div class="ok-box">✅ Your database is ready. Tables are created with all indexes, triggers, RLS policies, and views.</div>
+
+          <div style="font-weight:600;margin:16px 0 8px;font-size:13px">Step 5 — Seed the database with sample data</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In Supabase SQL Editor, paste and run this to seed 10 developers:
+            </div>
+          </div>
+          <div class="cmd" id="seedCmd1">-- Paste seed SQL from data/supabase-seed.sql<br>-- OR: open the terminal, open browser console (F12),<br>-- type: await NexusDB.seedAll(NEXUS_DATA)<br>-- then press Enter</div>
+          <div class="note-box">
+            💡 <strong>Easier method:</strong> On your live terminal, open browser DevTools (press <strong>F12</strong> → Console tab), type:
+            <code style="font-family:var(--font-mono);display:block;margin-top:6px;color:var(--cyan)">await NexusDB.seedAll(NEXUS_DATA)</code>
+            and press Enter. It will seed all 30 projects, 10 developers, 30 loans, and 16 alerts into Supabase.
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 3: Auth -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">C</div>
+          <div>
+            <div class="step-title">Create user accounts (Authentication)</div>
+            <div class="step-subtitle">Add team members with CRO, Portfolio Manager, Analyst roles</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">~5 min</span>
+        </div>
+        <div class="step-body">
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In Supabase dashboard → click <strong>Authentication</strong> (left sidebar, person icon) → <strong>Users</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Click <strong>Add user</strong> → <strong>Create new user</strong> → enter email and password for each team member</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">To set a user's role (CRO / PM / ANALYST), run this SQL in the SQL Editor (replace values):
+            </div>
+          </div>
+          <div class="cmd-group">
+            <span class="cmd-comment">-- Set role for a user (run in SQL Editor)</span>
+            <span class="cmd-line">UPDATE auth.users</span>
+            <span class="cmd-line">SET raw_user_meta_data = raw_user_meta_data || '{"role": "CRO"}'::jsonb</span>
+            <span class="cmd-line">WHERE email = 'your-cro@yourfund.com';</span>
+            <br>
+            <span class="cmd-comment">-- Valid roles: CRO | PM | ANALYST | VIEWER | BOARD</span>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">4</div>
+            <div class="screen-text">Team members can now log in at <code style="font-family:var(--font-mono)">https://YOUR_USERNAME.github.io/nexus-asia/login.html</code></div>
+          </div>
+          <div class="ok-box">✅ Authentication is working. The terminal will automatically load live data from Supabase when users sign in.</div>
+        </div>
+      </div>
+
+      <!-- PHASE 4: Storage -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">D</div>
+          <div>
+            <div class="step-title">Enable Document Storage (for Doc Vault)</div>
+            <div class="step-subtitle">Supabase Storage lets you upload and store PDF reports, site photos, loan agreements</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">~5 min</span>
+        </div>
+        <div class="step-body">
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In Supabase → click <strong>Storage</strong> (left sidebar) → <strong>New bucket</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Bucket name: <span class="breadcrumb-path">project-docs</span> → keep <strong>Private</strong> (not public) → click <strong>Save</strong></div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">3</div>
+            <div class="screen-text">Run this SQL to allow authenticated users to upload/view:</div>
+          </div>
+          <div class="cmd-group">
+            <span class="cmd-line">CREATE POLICY "auth_upload" ON storage.objects</span>
+            <span class="cmd-line">  FOR INSERT TO authenticated</span>
+            <span class="cmd-line">  WITH CHECK (bucket_id = 'project-docs');</span>
+            <br>
+            <span class="cmd-line">CREATE POLICY "auth_read" ON storage.objects</span>
+            <span class="cmd-line">  FOR SELECT TO authenticated</span>
+            <span class="cmd-line">  USING (bucket_id = 'project-docs');</span>
+          </div>
+          <div class="ok-box">✅ Document vault is now live. Team members can upload and view PDFs, Excel files, and images from any project dossier.</div>
+        </div>
+      </div>
+
+      <!-- PHASE 5: Monthly updates -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">E</div>
+          <div>
+            <div class="step-title">Monthly project data updates</div>
+            <div class="step-subtitle">How to keep your portfolio data current every month</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">Ongoing</span>
+        </div>
+        <div class="step-body">
+          <p>Every month, you or your analyst team should update project data. There are 3 ways:</p>
+
+          <div style="font-weight:600;margin-bottom:8px;font-size:13px">Option 1 — CSV Upload (recommended for teams)</div>
+          <p>Prepare a CSV with updated values for each project (DSCR, construction progress, sales velocity, escrow balance, etc). Use the <strong>Data Ingest</strong> button in the terminal to upload it. The parser will update all matching records.</p>
+
+          <div style="font-weight:600;margin:14px 0 8px;font-size:13px">Option 2 — Supabase Table Editor (for non-coders)</div>
+          <div class="screen-step">
+            <div class="screen-num">1</div>
+            <div class="screen-text">In Supabase → click <strong>Table Editor</strong> → open <strong>projects</strong> table</div>
+          </div>
+          <div class="screen-step">
+            <div class="screen-num">2</div>
+            <div class="screen-text">Click any row → edit the values → click the checkmark to save. Changes show in the terminal immediately on next page load.</div>
+          </div>
+
+          <div style="font-weight:600;margin:14px 0 8px;font-size:13px">Option 3 — SQL Update (for analysts)</div>
+          <div class="cmd-group">
+            <span class="cmd-comment">-- Monthly update example (run in SQL Editor)</span>
+            <span class="cmd-line">UPDATE projects SET</span>
+            <span class="cmd-line">  construction_progress = 78,</span>
+            <span class="cmd-line">  dscr = 1.42,</span>
+            <span class="cmd-line">  escrow_balance = 285000000,</span>
+            <span class="cmd-line">  sales_velocity = 22,</span>
+            <span class="cmd-line">  updated_at = NOW()</span>
+            <span class="cmd-line">WHERE id = 'PRJ001';</span>
+          </div>
+
+          <div class="note-box">
+            💡 After any update, the risk scoring engine automatically recalculates scores and alert levels on the next page load. If a project's DSCR drops below 1.0, it will automatically turn RED.
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Reference -->
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">F</div>
+          <div>
+            <div class="step-title">Quick Reference — URLs & Keys</div>
+            <div class="step-subtitle">Bookmark these pages</div>
+          </div>
+        </div>
+        <div class="step-body">
+          <table class="info-table" style="font-size:12px">
+            <tr><td>Your terminal (live)</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">https://YOUR_USERNAME.github.io/nexus-asia/</code></td></tr>
+            <tr><td>Login page</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">https://YOUR_USERNAME.github.io/nexus-asia/login.html</code></td></tr>
+            <tr><td>Supabase dashboard</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">https://app.supabase.com</code></td></tr>
+            <tr><td>Supabase SQL Editor</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">app.supabase.com → your project → SQL Editor</code></td></tr>
+            <tr><td>Supabase Table Editor</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">app.supabase.com → your project → Table Editor</code></td></tr>
+            <tr><td>GitHub repo</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">github.com/YOUR_USERNAME/nexus-asia</code></td></tr>
+            <tr><td>Edit config.js</td><td><code style="font-family:var(--font-mono);color:var(--cyan)">github.com/YOUR_USERNAME/nexus-asia/edit/main/js/config.js</code></td></tr>
+          </table>
+          <div class="warn-box" style="margin-top:16px">
+            ⚠️ <strong>For a real fund with real data:</strong> Consider setting the GitHub repository to <strong>Private</strong> (requires GitHub Pro ~$4/mo). Supabase row-level security (already configured in the schema) ensures users only access what they're authorised to see.
+          </div>
+          <div class="ok-box">
+            🎉 <strong>You're live!</strong> Share <code style="font-family:var(--font-mono)">https://YOUR_USERNAME.github.io/nexus-asia/login.html</code> with your team. They can now monitor your entire real estate credit portfolio from any device.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('sidebar').innerHTML = `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+  <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+  <a class="nav-item active" href="deploy.html"><span class="nav-icon">🚀</span><span>Deploy Guide</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>

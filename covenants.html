@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Covenant Tracker</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>COVENANT TRACKER</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <span id="lastTestedLabel" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)"></span>
+        <button class="btn btn-sm btn-primary" onclick="runCovenantTests()">▶ Run All Tests</button>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+
+      <!-- Summary Stats -->
+      <div class="stat-grid" id="covenantStats"></div>
+
+      <!-- Breach Table -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <span class="panel-title">🔴 Active <span class="accent">Covenant Breaches</span></span>
+          <div class="panel-actions"><span class="badge red" id="breachCount">0 BREACHES</span></div>
+        </div>
+        <div id="breachTable">
+          <div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center">Running covenant tests…</div>
+        </div>
+      </div>
+
+      <!-- All Covenants by Project -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">All Covenant Tests — Portfolio Wide</span>
+          <div class="panel-actions">
+            <select class="form-select" style="width:auto;font-size:10px;padding:4px 10px" id="covenantFilter" onchange="renderAllCovenants()">
+              <option value="ALL">All</option>
+              <option value="BREACHED">Breached Only</option>
+              <option value="WATCH">Watch (within 10%)</option>
+              <option value="PASSING">Passing</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="covenantFullTable">
+            <thead>
+              <tr>
+                <th>PROJECT</th>
+                <th>LENDER</th>
+                <th>COVENANT TYPE</th>
+                <th>THRESHOLD</th>
+                <th>ACTUAL</th>
+                <th>HEADROOM</th>
+                <th>STATUS</th>
+                <th>LAST TESTED</th>
+                <th>WAIVER</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="covenantTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Waiver Modal -->
+<div class="modal-overlay" id="waiverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span style="font-size:16px">📋</span>
+      <div>
+        <div style="font-size:14px;font-weight:600">Grant Covenant Waiver</div>
+        <div style="font-size:10px;color:var(--text-muted)" id="waiverCovenantDesc">—</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Waiver Valid Until</label>
+        <input type="date" class="form-input" id="waiverExpiry">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Waiver Conditions / Notes</label>
+        <textarea class="form-input" id="waiverNotes" rows="4" placeholder="Conditions under which waiver is granted…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Authorized By</label>
+        <input type="text" class="form-input" id="waiverAuth" placeholder="Name / title">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWaiver()">Grant Waiver</button>
+    </div>
+  </div>
+</div>
+
+<script src="data/seed-data.js"></script>
+<script src="js/config.js" onerror="void(0)"></script>
+<script src="js/scoring-engine.js"></script>
+<script>
+// Build covenants from projects + loans
+let allCovenants = [];
+let projects = NEXUS_DATA.projects;
+let loans = NEXUS_DATA.loans;
+let selectedCovenantId = null;
+
+const CFG = window.__NEXUS_CONFIG?.thresholds || {};
+
+function buildCovenants() {
+  const cv = [];
+  projects.forEach(p => {
+    const loan = loans.find(l => l.id === p.loanId);
+    if (!loan) return;
+    const id = (name, type, threshold, direction, actual, freq) => ({
+      id: `${p.id}_${type}`, project: p, loan,
+      type, description: name, threshold, direction,
+      actual, frequency: freq || 'QUARTERLY',
+      lastTested: new Date().toISOString().split('T')[0]
+    });
+    cv.push(id('Minimum DSCR', 'DSCR',            CFG.dscr_min || 1.25,   'MIN', p.dscr,                    'MONTHLY'));
+    cv.push(id('Maximum LTV',  'LTV',             CFG.ltv_max  || 75,     'MAX', p.ltv,                    'QUARTERLY'));
+    cv.push(id('Maximum LTC',  'LTC',             CFG.ltc_max  || 80,     'MAX', p.ltc,                    'QUARTERLY'));
+    cv.push(id('Max Cost Overrun', 'COST_OVERRUN', CFG.cost_overrun_red || 20, 'MAX', p.costOverrun,       'MONTHLY'));
+    cv.push(id('Escrow Coverage', 'ESCROW', (CFG.escrow_amber || 85), 'MIN',
+      parseFloat((p.escrowBalance / p.escrowRequired * 100).toFixed(1)), 'MONTHLY'));
+    cv.push(id('Construction vs Schedule', 'CONSTRUCTION',
+      -1 * (CFG.construction_delay_amber || 45) / 365 * 100, 'MIN',
+      p.constructionProgress - p.scheduledProgress, 'MONTHLY'));
+  });
+
+  // Compute breach and headroom
+  cv.forEach(c => {
+    if (c.direction === 'MIN') {
+      c.isBreached = c.actual < c.threshold;
+      c.headroom = c.actual - c.threshold;
+    } else {
+      c.isBreached = c.actual > c.threshold;
+      c.headroom = c.threshold - c.actual;
+    }
+    c.isWatch = !c.isBreached && Math.abs(c.headroom / c.threshold) < 0.1;
+    c.status = c.isBreached ? 'BREACHED' : c.isWatch ? 'WATCH' : 'PASSING';
+    c.waiverGranted = false;
+  });
+
+  return cv;
+}
+
+function formatVal(type, val) {
+  if (val === null || val === undefined) return '—';
+  if (type === 'DSCR') return val.toFixed(2) + 'x';
+  if (type === 'CONSTRUCTION') return (val >= 0 ? '+' : '') + val.toFixed(1) + '%';
+  return val.toFixed(1) + '%';
+}
+
+function formatHeadroom(c) {
+  const v = c.headroom;
+  const color = v >= 0 ? 'var(--green)' : 'var(--red)';
+  const prefix = v >= 0 ? '+' : '';
+  const unit = c.type === 'DSCR' ? 'x' : '%';
+  return `<span style="font-family:var(--font-mono);font-weight:600;color:${color}">${prefix}${v.toFixed(2)}${unit}</span>`;
+}
+
+function renderStats() {
+  const breached = allCovenants.filter(c => c.isBreached && !c.waiverGranted).length;
+  const watching = allCovenants.filter(c => c.isWatch).length;
+  const passing  = allCovenants.filter(c => c.status === 'PASSING').length;
+  const waivers  = allCovenants.filter(c => c.waiverGranted).length;
+  document.getElementById('covenantStats').innerHTML = `
+    <div class="stat-card red"><div class="stat-label">Active Breaches</div><div class="stat-value">${breached}</div><div class="stat-sub">Immediate cure required</div></div>
+    <div class="stat-card amber"><div class="stat-label">Watch (Within 10%)</div><div class="stat-value">${watching}</div><div class="stat-sub">Approaching threshold</div></div>
+    <div class="stat-card green"><div class="stat-label">Passing</div><div class="stat-value">${passing}</div><div class="stat-sub">Within covenant</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total Tests</div><div class="stat-value">${allCovenants.length}</div><div class="stat-sub">${waivers} waiver(s) granted</div></div>
+  `;
+  document.getElementById('breachCount').textContent = `${breached} BREACHES`;
+  document.getElementById('lastTestedLabel').textContent = `Last run: ${new Date().toLocaleDateString('en-IN')}`;
+}
+
+function renderBreaches() {
+  const breached = allCovenants.filter(c => c.isBreached && !c.waiverGranted);
+  if (breached.length === 0) {
+    document.getElementById('breachTable').innerHTML = `<div style="padding:24px;text-align:center;color:var(--green);font-family:var(--font-mono);font-size:12px">✓ No active covenant breaches as of ${new Date().toLocaleDateString('en-IN')}</div>`;
+    return;
+  }
+  document.getElementById('breachTable').innerHTML = breached.map(c => `
+    <div class="covenant-row" style="border-left:3px solid var(--red)">
+      <div style="min-width:180px">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">${c.project.name}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${c.project.city} · ${c.loan.lender}</div>
+      </div>
+      <span class="covenant-type-pill" style="background:var(--red-bg);color:var(--red);border:1px solid rgba(255,51,85,0.2)">${c.type}</span>
+      <div class="covenant-bar-wrap">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-bottom:3px">
+          <span>${c.description}</span>
+          <span>${formatVal(c.type, c.actual)} vs ${c.direction === 'MIN' ? '≥' : '≤'} ${formatVal(c.type, c.threshold)}</span>
+        </div>
+        <div class="covenant-bar-track" style="height:8px">
+          <div class="covenant-bar-fill breach-pulse" style="width:${Math.min(100, Math.abs(c.actual / c.threshold) * 100)}%;background:var(--red)"></div>
+        </div>
+      </div>
+      ${formatHeadroom(c)}
+      <button class="btn btn-sm btn-secondary" onclick="openWaiver('${c.id}')">Grant Waiver</button>
+      <button class="btn btn-sm btn-danger" onclick="window.location.href='index.html'">View Project</button>
+    </div>
+  `).join('');
+}
+
+function renderAllCovenants() {
+  const filter = document.getElementById('covenantFilter').value;
+  let rows = allCovenants;
+  if (filter === 'BREACHED') rows = rows.filter(c => c.isBreached && !c.waiverGranted);
+  else if (filter === 'WATCH') rows = rows.filter(c => c.isWatch);
+  else if (filter === 'PASSING') rows = rows.filter(c => c.status === 'PASSING');
+
+  document.getElementById('covenantTableBody').innerHTML = rows.map(c => {
+    const statusColor = c.waiverGranted ? 'var(--blue)' : c.isBreached ? 'var(--red)' : c.isWatch ? 'var(--amber)' : 'var(--green)';
+    const statusLabel = c.waiverGranted ? 'WAIVER' : c.status;
+    const barPct = Math.min(100, Math.max(0, c.direction === 'MIN'
+      ? (c.actual / c.threshold) * 100
+      : (1 - (c.actual / c.threshold)) * 100 + 50));
+    return `<tr>
+      <td><div style="font-weight:600;font-size:12px">${c.project.name}</div><div style="font-size:9px;color:var(--text-muted)">${c.project.id}</div></td>
+      <td style="font-size:11px">${c.loan.lender}</td>
+      <td><span class="covenant-type-pill" style="background:rgba(0,255,204,0.06);color:var(--cyan);border:1px solid rgba(0,255,204,0.15)">${c.type}</span></td>
+      <td style="font-family:var(--font-mono);font-size:11px">${c.direction === 'MIN' ? '≥' : '≤'} ${formatVal(c.type, c.threshold)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:${c.isBreached ? 'var(--red)' : 'var(--text-primary)'}">${formatVal(c.type, c.actual)}</td>
+      <td>${formatHeadroom(c)}</td>
+      <td><span class="badge" style="background:${statusColor}20;color:${statusColor};border:1px solid ${statusColor}44">${statusLabel}</span></td>
+      <td style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">${c.lastTested}</td>
+      <td style="font-size:10px;color:${c.waiverGranted ? 'var(--blue)' : 'var(--text-muted)'}">${c.waiverGranted ? '✓ Active' : '—'}</td>
+      <td>
+        ${c.isBreached && !c.waiverGranted ? `<button class="btn btn-sm btn-danger" onclick="openWaiver('${c.id}')">Waiver</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function runCovenantTests() {
+  allCovenants = buildCovenants();
+  renderStats();
+  renderBreaches();
+  renderAllCovenants();
+  const btn = document.querySelector('[onclick="runCovenantTests()"]');
+  btn.textContent = '✓ Tests Complete';
+  setTimeout(() => btn.textContent = '▶ Run All Tests', 3000);
+}
+
+let selectedCovenant = null;
+function openWaiver(id) {
+  selectedCovenant = allCovenants.find(c => c.id === id);
+  if (!selectedCovenant) return;
+  document.getElementById('waiverCovenantDesc').textContent = `${selectedCovenant.project.name} · ${selectedCovenant.description}`;
+  const d = new Date(); d.setMonth(d.getMonth() + 3);
+  document.getElementById('waiverExpiry').value = d.toISOString().split('T')[0];
+  document.getElementById('waiverModal').classList.add('open');
+}
+function closeModal() { document.getElementById('waiverModal').classList.remove('open'); }
+function saveWaiver() {
+  if (selectedCovenant) {
+    selectedCovenant.waiverGranted = true;
+    selectedCovenant.status = 'PASSING';
+    selectedCovenant.isBreached = false;
+    renderStats(); renderBreaches(); renderAllCovenants();
+  }
+  closeModal();
+}
+
+// Build sidebar
+document.getElementById('sidebar').innerHTML = buildSidebar('covenants');
+function buildSidebar(active) {
+  const nav = [
+    ['index.html','⬡','Portfolio'],['projects.html','◫','Projects'],
+    ['alerts.html','⚠','Alerts'],['covenants.html','📋','Covenants'],
+    ['waterfall.html','⧫','Capital Stack'],['stress.html','⚡','Stress Test'],
+    ['developers.html','⊙','Developers'],['markets.html','◈','Markets'],
+    ['schedule.html','📅','Repayment'],['reports.html','⊟','Reports'],
+    ['vault.html','🗄','Doc Vault'],['audit.html','🔍','Audit Trail'],
+    ['schema.html','⊞','DB Schema'],['deploy.html','🚀','Deploy Guide']
+  ];
+  return `<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+  <nav class="sidebar-nav">${nav.map(([href,icon,label]) =>
+    `<a class="nav-item${href.replace('.html','') === active || (active==='index' && href==='index.html') ? ' active' : ''}" href="${href}"><span class="nav-icon">${icon}</span><span>${label}</span></a>`
+  ).join('')}</nav>
+  <div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sidebarClock">--:--</span></div></div>`;
+}
+
+// Init
+allCovenants = buildCovenants();
+renderStats();
+renderBreaches();
+renderAllCovenants();
+setInterval(() => { document.getElementById('sidebarClock').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}); }, 1000);
+</script>
+</body>
+</html>

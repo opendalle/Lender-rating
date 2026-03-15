@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Database Schema</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.schema-container { max-width: 1200px; margin: 0 auto; }
+.table-card { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 20px; overflow: hidden; }
+.table-card-header { background: var(--bg-mid); padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.table-name { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--cyan); }
+.table-desc { font-size: 11px; color: var(--text-muted); }
+.field-table { width: 100%; border-collapse: collapse; }
+.field-table th { background: var(--bg-surface); padding: 8px 14px; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--border); }
+.field-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: top; }
+.field-table tr:last-child td { border-bottom: none; }
+.field-table tr:hover td { background: var(--bg-surface); }
+.col-name { font-family: var(--font-mono); color: var(--text-accent); font-size: 12px; }
+.col-type { font-family: var(--font-mono); color: var(--purple); font-size: 11px; }
+.col-constraint { font-family: var(--font-mono); font-size: 10px; }
+.pk { color: var(--amber); }
+.fk { color: var(--blue); }
+.nn { color: var(--green-dim); }
+.col-desc { color: var(--text-secondary); font-size: 11px; }
+.index-pill { display: inline-block; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 3px; padding: 1px 7px; font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); margin: 2px; }
+.sql-block { background: var(--bg-deep); padding: 20px 24px; border-top: 1px solid var(--border); font-family: var(--font-mono); font-size: 10.5px; color: var(--text-secondary); overflow-x: auto; line-height: 1.8; white-space: pre; }
+.sql-kw { color: #ff79c6; }
+.sql-type { color: #8be9fd; }
+.sql-str { color: #f1fa8c; }
+.sql-cmt { color: #6272a4; font-style: italic; }
+.sql-fn { color: var(--cyan); }
+.erd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.erd-node { background: var(--bg-surface); border: 1px solid var(--border-accent); border-radius: var(--radius); padding: 10px 14px; }
+.erd-node-name { font-family: var(--font-mono); font-size: 11px; color: var(--cyan); margin-bottom: 6px; font-weight: 600; }
+.erd-field { font-size: 10px; color: var(--text-secondary); padding: 2px 0; display: flex; justify-content: space-between; }
+.erd-field .type { color: var(--purple); font-family: var(--font-mono); font-size: 9px; }
+.copy-btn { cursor: pointer; background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 10px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); transition: all 0.15s; }
+.copy-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+</style>
+</head>
+<body>
+<div class="terminal-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">◈</div>
+        <div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Terminal</span></a>
+      <a class="nav-item active" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+    </nav>
+  </aside>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>DATABASE ARCHITECTURE</span></div>
+      <div class="topbar-metrics" style="margin-left:auto;display:flex;gap:12px;align-items:center">
+        <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">10 TABLES · SUPABASE POSTGRESQL 15</span>
+        <button class="btn btn-sm btn-primary" onclick="copyAllSQL()">📋 Copy Full SQL</button>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Back to Terminal</a>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="schema-container">
+
+        <!-- ERD OVERVIEW -->
+        <div class="panel" style="margin-bottom:24px">
+          <div class="panel-header"><span class="panel-title">Entity Relationship <span class="accent">Overview</span></span></div>
+          <div class="panel-body">
+            <div class="erd-grid">
+              <div class="erd-node"><div class="erd-node-name">🏗 projects</div><div class="erd-field"><span>id (PK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>developer_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>loan_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>alert_level</span><span class="type">ENUM</span></div><div class="erd-field"><span>risk_score</span><span class="type">INT</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">👤 developers</div><div class="erd-field"><span>id (PK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>name</span><span class="type">TEXT</span></div><div class="erd-field"><span>tier</span><span class="type">ENUM</span></div><div class="erd-field"><span>risk_score</span><span class="type">INT</span></div><div class="erd-field"><span>past_defaults</span><span class="type">INT</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">💳 loans</div><div class="erd-field"><span>id (PK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>outstanding</span><span class="type">BIGINT</span></div><div class="erd-field"><span>status</span><span class="type">ENUM</span></div><div class="erd-field"><span>interest_rate</span><span class="type">NUMERIC</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">📊 risk_scores</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>total_score</span><span class="type">INT</span></div><div class="erd-field"><span>8 components</span><span class="type">NUMERIC</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">⚠️ alerts</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>type</span><span class="type">ENUM</span></div><div class="erd-field"><span>acknowledged</span><span class="type">BOOL</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">🏗 construction_updates</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>actual_progress</span><span class="type">NUMERIC</span></div><div class="erd-field"><span>cost_to_date</span><span class="type">BIGINT</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">🏠 sales_updates</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>units_sold_month</span><span class="type">INT</span></div><div class="erd-field"><span>collections</span><span class="type">NUMERIC</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">💰 financials</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>dscr</span><span class="type">NUMERIC</span></div><div class="erd-field"><span>net_cashflow</span><span class="type">BIGINT</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">🌆 market_data</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>city</span><span class="type">TEXT</span></div><div class="erd-field"><span>avg_price</span><span class="type">NUMERIC</span></div><div class="erd-field"><span>absorption</span><span class="type">NUMERIC</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">📈 portfolio_exposure</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>snapshot_date</span><span class="type">DATE</span></div><div class="erd-field"><span>total_outstanding</span><span class="type">BIGINT</span></div><div class="erd-field"><span>npa_amount</span><span class="type">BIGINT</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">📋 covenants</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>loan_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>covenant_type</span><span class="type">TEXT</span></div><div class="erd-field"><span>is_breached</span><span class="type">BOOL</span></div></div>
+              <div class="erd-node"><div class="erd-node-name">📑 lender_reports</div><div class="erd-field"><span>id (PK)</span><span class="type">UUID</span></div><div class="erd-field"><span>project_id (FK)</span><span class="type">TEXT</span></div><div class="erd-field"><span>report_type</span><span class="type">TEXT</span></div><div class="erd-field"><span>generated_by</span><span class="type">TEXT</span></div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">Central entity: <span style="color:var(--cyan)">projects</span> · Foreign keys to: developers, loans · Child tables: risk_scores, alerts, construction_updates, sales_updates, financials, covenants, lender_reports</div>
+          </div>
+        </div>
+
+        <!-- TABLE: developers -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-name">developers</span>
+            <span class="table-desc">Sponsor / developer master data and risk profile</span>
+            <button class="copy-btn" onclick="copySQL('sql-developers')">Copy SQL</button>
+          </div>
+          <table class="field-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="col-name">id</td><td class="col-type">TEXT</td><td class="col-constraint pk">PRIMARY KEY</td><td class="col-desc">Developer code e.g. DEV001</td></tr>
+              <tr><td class="col-name">name</td><td class="col-type">TEXT</td><td class="col-constraint nn">NOT NULL</td><td class="col-desc">Full legal entity name</td></tr>
+              <tr><td class="col-name">hq</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Headquarters city</td></tr>
+              <tr><td class="col-name">founded</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Year of incorporation</td></tr>
+              <tr><td class="col-name">total_projects</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Cumulative completed + active projects</td></tr>
+              <tr><td class="col-name">active_projects</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Currently under development</td></tr>
+              <tr><td class="col-name">past_delays</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Historical project delays (>90 days)</td></tr>
+              <tr><td class="col-name">past_defaults</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Historical loan defaults — key risk signal</td></tr>
+              <tr><td class="col-name">portfolio_exposure</td><td class="col-type">BIGINT</td><td>DEFAULT 0</td><td class="col-desc">Total outstanding loan exposure across all projects (INR)</td></tr>
+              <tr><td class="col-name">risk_score</td><td class="col-type">INTEGER</td><td>0–100</td><td class="col-desc">Composite sponsor risk score</td></tr>
+              <tr><td class="col-name">tier</td><td class="col-type">TEXT</td><td>CHECK IN (AAA,AA,A,B,C,D)</td><td class="col-desc">Credit risk tier classification</td></tr>
+              <tr><td class="col-name">net_worth_cr</td><td class="col-type">NUMERIC(14,2)</td><td></td><td class="col-desc">Promoter net worth in Crores</td></tr>
+              <tr><td class="col-name">annual_turnover_cr</td><td class="col-type">NUMERIC(14,2)</td><td></td><td class="col-desc">Last audited annual turnover</td></tr>
+              <tr><td class="col-name">credit_rating</td><td class="col-type">TEXT</td><td></td><td class="col-desc">External rating (CRISIL/ICRA)</td></tr>
+              <tr><td class="col-name">contact_person</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Primary relationship contact</td></tr>
+              <tr><td class="col-name">contact_email</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Contact email</td></tr>
+              <tr><td class="col-name">pan_number</td><td class="col-type">TEXT</td><td>UNIQUE</td><td class="col-desc">PAN for KYC compliance</td></tr>
+              <tr><td class="col-name">gstin</td><td class="col-type">TEXT</td><td></td><td class="col-desc">GST registration number</td></tr>
+              <tr><td class="col-name">is_listed</td><td class="col-type">BOOLEAN</td><td>DEFAULT false</td><td class="col-desc">BSE/NSE listed entity</td></tr>
+              <tr><td class="col-name">stock_ticker</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Exchange ticker if listed</td></tr>
+              <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Record creation timestamp</td></tr>
+              <tr><td class="col-name">updated_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Last update timestamp</td></tr>
+            </tbody>
+          </table>
+          <div style="padding:8px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted)">
+            Indexes: <span class="index-pill">tier</span><span class="index-pill">risk_score</span><span class="index-pill">past_defaults</span>
+          </div>
+          <pre class="sql-block" id="sql-developers"><span class="sql-cmt">-- DEVELOPERS: Sponsor / developer master data</span>
+<span class="sql-kw">CREATE TABLE</span> developers (
+  id                   <span class="sql-type">TEXT</span>         <span class="sql-kw">PRIMARY KEY</span>,
+  name                 <span class="sql-type">TEXT</span>         <span class="sql-kw">NOT NULL</span>,
+  hq                   <span class="sql-type">TEXT</span>,
+  founded              <span class="sql-type">INTEGER</span>,
+  total_projects       <span class="sql-type">INTEGER</span>      <span class="sql-kw">DEFAULT</span> 0,
+  active_projects      <span class="sql-type">INTEGER</span>      <span class="sql-kw">DEFAULT</span> 0,
+  past_delays          <span class="sql-type">INTEGER</span>      <span class="sql-kw">DEFAULT</span> 0,
+  past_defaults        <span class="sql-type">INTEGER</span>      <span class="sql-kw">DEFAULT</span> 0,
+  portfolio_exposure   <span class="sql-type">BIGINT</span>       <span class="sql-kw">DEFAULT</span> 0,
+  risk_score           <span class="sql-type">INTEGER</span>      <span class="sql-kw">CHECK</span>(risk_score <span class="sql-kw">BETWEEN</span> 0 <span class="sql-kw">AND</span> 100),
+  tier                 <span class="sql-type">TEXT</span>         <span class="sql-kw">CHECK</span>(tier <span class="sql-kw">IN</span> (<span class="sql-str">'AAA'</span>,<span class="sql-str">'AA'</span>,<span class="sql-str">'A'</span>,<span class="sql-str">'B'</span>,<span class="sql-str">'C'</span>,<span class="sql-str">'D'</span>)),
+  net_worth_cr         <span class="sql-type">NUMERIC</span>(14,2),
+  annual_turnover_cr   <span class="sql-type">NUMERIC</span>(14,2),
+  credit_rating        <span class="sql-type">TEXT</span>,
+  contact_person       <span class="sql-type">TEXT</span>,
+  contact_email        <span class="sql-type">TEXT</span>,
+  pan_number           <span class="sql-type">TEXT</span>         <span class="sql-kw">UNIQUE</span>,
+  gstin                <span class="sql-type">TEXT</span>,
+  is_listed            <span class="sql-type">BOOLEAN</span>      <span class="sql-kw">DEFAULT</span> <span class="sql-kw">false</span>,
+  stock_ticker         <span class="sql-type">TEXT</span>,
+  created_at           <span class="sql-type">TIMESTAMPTZ</span>  <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>(),
+  updated_at           <span class="sql-type">TIMESTAMPTZ</span>  <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_dev_tier      <span class="sql-kw">ON</span> developers(tier);
+<span class="sql-kw">CREATE INDEX</span> idx_dev_risk      <span class="sql-kw">ON</span> developers(risk_score);
+<span class="sql-kw">CREATE INDEX</span> idx_dev_defaults  <span class="sql-kw">ON</span> developers(past_defaults);</pre>
+        </div>
+
+        <!-- TABLE: projects -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-name">projects</span>
+            <span class="table-desc">Core project master table — central entity</span>
+            <button class="copy-btn" onclick="copySQL('sql-projects')">Copy SQL</button>
+          </div>
+          <table class="field-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="col-name">id</td><td class="col-type">TEXT</td><td class="col-constraint pk">PRIMARY KEY</td><td class="col-desc">Project code e.g. PRJ001</td></tr>
+              <tr><td class="col-name">name</td><td class="col-type">TEXT</td><td class="col-constraint nn">NOT NULL</td><td class="col-desc">Project marketing name</td></tr>
+              <tr><td class="col-name">developer_id</td><td class="col-type">TEXT</td><td class="col-constraint fk">FK → developers.id</td><td class="col-desc">Sponsoring developer</td></tr>
+              <tr><td class="col-name">loan_id</td><td class="col-type">TEXT</td><td class="col-constraint fk">FK → loans.id</td><td class="col-desc">Primary loan facility</td></tr>
+              <tr><td class="col-name">city</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Project city</td></tr>
+              <tr><td class="col-name">state</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Project state</td></tr>
+              <tr><td class="col-name">micro_market</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Sub-locality / micro-market</td></tr>
+              <tr><td class="col-name">pin_code</td><td class="col-type">TEXT</td><td></td><td class="col-desc">PIN code for geo-routing</td></tr>
+              <tr><td class="col-name">lat</td><td class="col-type">NUMERIC(10,6)</td><td></td><td class="col-desc">Latitude for mapping</td></tr>
+              <tr><td class="col-name">lng</td><td class="col-type">NUMERIC(10,6)</td><td></td><td class="col-desc">Longitude for mapping</td></tr>
+              <tr><td class="col-name">type</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Residential / Commercial / Mixed-use / Township</td></tr>
+              <tr><td class="col-name">total_units</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Total sanctioned units</td></tr>
+              <tr><td class="col-name">total_area_sqft</td><td class="col-type">NUMERIC(14,2)</td><td></td><td class="col-desc">Total saleable area sq.ft.</td></tr>
+              <tr><td class="col-name">total_project_cost</td><td class="col-type">BIGINT</td><td></td><td class="col-desc">Total project cost (INR)</td></tr>
+              <tr><td class="col-name">launch_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Official RERA launch date</td></tr>
+              <tr><td class="col-name">completion_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Target OC / handover date</td></tr>
+              <tr><td class="col-name">revised_completion_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Revised completion if delayed</td></tr>
+              <tr><td class="col-name">rera_number</td><td class="col-type">TEXT</td><td>UNIQUE</td><td class="col-desc">RERA registration number</td></tr>
+              <tr><td class="col-name">rera_expiry</td><td class="col-type">DATE</td><td></td><td class="col-desc">RERA certificate expiry</td></tr>
+              <tr><td class="col-name">risk_score</td><td class="col-type">INTEGER</td><td>0–100</td><td class="col-desc">Current composite risk score</td></tr>
+              <tr><td class="col-name">alert_level</td><td class="col-type">TEXT</td><td>CHECK IN (GREEN,AMBER,RED)</td><td class="col-desc">Current alert classification</td></tr>
+              <tr><td class="col-name">construction_progress</td><td class="col-type">NUMERIC(5,2)</td><td></td><td class="col-desc">Actual construction % complete</td></tr>
+              <tr><td class="col-name">scheduled_progress</td><td class="col-type">NUMERIC(5,2)</td><td></td><td class="col-desc">Planned % per schedule</td></tr>
+              <tr><td class="col-name">units_sold</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Cumulative units sold</td></tr>
+              <tr><td class="col-name">sales_velocity</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Monthly sales run-rate (units/mo)</td></tr>
+              <tr><td class="col-name">sales_target</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Monthly sales target</td></tr>
+              <tr><td class="col-name">dscr</td><td class="col-type">NUMERIC(6,3)</td><td></td><td class="col-desc">Debt Service Coverage Ratio</td></tr>
+              <tr><td class="col-name">ltv</td><td class="col-type">NUMERIC(5,2)</td><td></td><td class="col-desc">Loan-to-Value %</td></tr>
+              <tr><td class="col-name">ltc</td><td class="col-type">NUMERIC(5,2)</td><td></td><td class="col-desc">Loan-to-Cost %</td></tr>
+              <tr><td class="col-name">cost_overrun</td><td class="col-type">NUMERIC(6,2)</td><td>DEFAULT 0</td><td class="col-desc">Cost overrun % vs approved budget</td></tr>
+              <tr><td class="col-name">escrow_balance</td><td class="col-type">BIGINT</td><td></td><td class="col-desc">Current escrow account balance (INR)</td></tr>
+              <tr><td class="col-name">escrow_required</td><td class="col-type">BIGINT</td><td></td><td class="col-desc">Required escrow per loan agreement</td></tr>
+              <tr><td class="col-name">description</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Project description</td></tr>
+              <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Record creation</td></tr>
+              <tr><td class="col-name">updated_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Last update</td></tr>
+            </tbody>
+          </table>
+          <div style="padding:8px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted)">
+            Indexes: <span class="index-pill">developer_id</span><span class="index-pill">alert_level</span><span class="index-pill">city</span><span class="index-pill">risk_score</span><span class="index-pill">rera_number</span>
+          </div>
+          <pre class="sql-block" id="sql-projects"><span class="sql-cmt">-- PROJECTS: Core project master table</span>
+<span class="sql-kw">CREATE TABLE</span> projects (
+  id                      <span class="sql-type">TEXT</span>           <span class="sql-kw">PRIMARY KEY</span>,
+  name                    <span class="sql-type">TEXT</span>           <span class="sql-kw">NOT NULL</span>,
+  developer_id            <span class="sql-type">TEXT</span>           <span class="sql-kw">REFERENCES</span> developers(id) <span class="sql-kw">ON DELETE RESTRICT</span>,
+  loan_id                 <span class="sql-type">TEXT</span>,
+  city                    <span class="sql-type">TEXT</span>,
+  state                   <span class="sql-type">TEXT</span>,
+  micro_market            <span class="sql-type">TEXT</span>,
+  pin_code                <span class="sql-type">TEXT</span>,
+  lat                     <span class="sql-type">NUMERIC</span>(10,6),
+  lng                     <span class="sql-type">NUMERIC</span>(10,6),
+  type                    <span class="sql-type">TEXT</span>,
+  total_units             <span class="sql-type">INTEGER</span>,
+  total_area_sqft         <span class="sql-type">NUMERIC</span>(14,2),
+  total_project_cost      <span class="sql-type">BIGINT</span>,
+  launch_date             <span class="sql-type">DATE</span>,
+  completion_date         <span class="sql-type">DATE</span>,
+  revised_completion_date <span class="sql-type">DATE</span>,
+  rera_number             <span class="sql-type">TEXT</span>           <span class="sql-kw">UNIQUE</span>,
+  rera_expiry             <span class="sql-type">DATE</span>,
+  risk_score              <span class="sql-type">INTEGER</span>        <span class="sql-kw">CHECK</span>(risk_score <span class="sql-kw">BETWEEN</span> 0 <span class="sql-kw">AND</span> 100),
+  alert_level             <span class="sql-type">TEXT</span>           <span class="sql-kw">DEFAULT</span> <span class="sql-str">'GREEN'</span> <span class="sql-kw">CHECK</span>(alert_level <span class="sql-kw">IN</span> (<span class="sql-str">'GREEN'</span>,<span class="sql-str">'AMBER'</span>,<span class="sql-str">'RED'</span>)),
+  construction_progress   <span class="sql-type">NUMERIC</span>(5,2)   <span class="sql-kw">DEFAULT</span> 0,
+  scheduled_progress      <span class="sql-type">NUMERIC</span>(5,2)   <span class="sql-kw">DEFAULT</span> 0,
+  units_sold              <span class="sql-type">INTEGER</span>        <span class="sql-kw">DEFAULT</span> 0,
+  sales_velocity          <span class="sql-type">INTEGER</span>        <span class="sql-kw">DEFAULT</span> 0,
+  sales_target            <span class="sql-type">INTEGER</span>        <span class="sql-kw">DEFAULT</span> 0,
+  dscr                    <span class="sql-type">NUMERIC</span>(6,3),
+  ltv                     <span class="sql-type">NUMERIC</span>(5,2),
+  ltc                     <span class="sql-type">NUMERIC</span>(5,2),
+  cost_overrun            <span class="sql-type">NUMERIC</span>(6,2)   <span class="sql-kw">DEFAULT</span> 0,
+  escrow_balance          <span class="sql-type">BIGINT</span>         <span class="sql-kw">DEFAULT</span> 0,
+  escrow_required         <span class="sql-type">BIGINT</span>         <span class="sql-kw">DEFAULT</span> 0,
+  description             <span class="sql-type">TEXT</span>,
+  created_at              <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>(),
+  updated_at              <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_projects_developer   <span class="sql-kw">ON</span> projects(developer_id);
+<span class="sql-kw">CREATE INDEX</span> idx_projects_alert        <span class="sql-kw">ON</span> projects(alert_level);
+<span class="sql-kw">CREATE INDEX</span> idx_projects_city         <span class="sql-kw">ON</span> projects(city);
+<span class="sql-kw">CREATE INDEX</span> idx_projects_risk         <span class="sql-kw">ON</span> projects(risk_score);
+<span class="sql-kw">CREATE INDEX</span> idx_projects_rera         <span class="sql-kw">ON</span> projects(rera_number);</pre>
+        </div>
+
+        <!-- TABLE: loans -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-name">loans</span>
+            <span class="table-desc">Loan facility structure, disbursements, and status</span>
+            <button class="copy-btn" onclick="copySQL('sql-loans')">Copy SQL</button>
+          </div>
+          <table class="field-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="col-name">id</td><td class="col-type">TEXT</td><td class="col-constraint pk">PRIMARY KEY</td><td class="col-desc">Loan code e.g. LN001</td></tr>
+              <tr><td class="col-name">project_id</td><td class="col-type">TEXT</td><td class="col-constraint fk">FK → projects.id</td><td class="col-desc">Associated project</td></tr>
+              <tr><td class="col-name">developer_id</td><td class="col-type">TEXT</td><td class="col-constraint fk">FK → developers.id</td><td class="col-desc">Borrower entity</td></tr>
+              <tr><td class="col-name">sanctioned_amount</td><td class="col-type">BIGINT</td><td>NOT NULL</td><td class="col-desc">Total sanctioned limit (INR)</td></tr>
+              <tr><td class="col-name">disbursed_amount</td><td class="col-type">BIGINT</td><td>DEFAULT 0</td><td class="col-desc">Total disbursed to date</td></tr>
+              <tr><td class="col-name">outstanding_amount</td><td class="col-type">BIGINT</td><td>DEFAULT 0</td><td class="col-desc">Current outstanding balance</td></tr>
+              <tr><td class="col-name">undisbursed_amount</td><td class="col-type">BIGINT</td><td>GENERATED</td><td class="col-desc">sanctioned - disbursed</td></tr>
+              <tr><td class="col-name">interest_rate</td><td class="col-type">NUMERIC(5,2)</td><td></td><td class="col-desc">Annual interest rate %</td></tr>
+              <tr><td class="col-name">interest_type</td><td class="col-type">TEXT</td><td>CHECK (FIXED,FLOATING)</td><td class="col-desc">Fixed or floating rate</td></tr>
+              <tr><td class="col-name">benchmark_rate</td><td class="col-type">TEXT</td><td></td><td class="col-desc">MCLR / Repo rate reference</td></tr>
+              <tr><td class="col-name">spread_bps</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Spread over benchmark in basis points</td></tr>
+              <tr><td class="col-name">loan_type</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Construction Finance / Project Finance / NCD</td></tr>
+              <tr><td class="col-name">tenure</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Total loan tenure in months</td></tr>
+              <tr><td class="col-name">moratorium_months</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Principal moratorium period</td></tr>
+              <tr><td class="col-name">start_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Loan disbursement start</td></tr>
+              <tr><td class="col-name">end_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Final maturity date</td></tr>
+              <tr><td class="col-name">next_repayment_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Next scheduled repayment</td></tr>
+              <tr><td class="col-name">repayment_amount</td><td class="col-type">BIGINT</td><td></td><td class="col-desc">Monthly repayment obligation</td></tr>
+              <tr><td class="col-name">lender</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Lending institution name</td></tr>
+              <tr><td class="col-name">lender_category</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Bank / NBFC / AIF / NCD / Mezzanine</td></tr>
+              <tr><td class="col-name">security_type</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Mortgage / Pledge / Assignment</td></tr>
+              <tr><td class="col-name">collateral_value</td><td class="col-type">BIGINT</td><td></td><td class="col-desc">Security / collateral value</td></tr>
+              <tr><td class="col-name">status</td><td class="col-type">TEXT</td><td>CHECK (ACTIVE,WATCH,NPA,CLOSED)</td><td class="col-desc">Current loan health status</td></tr>
+              <tr><td class="col-name">npa_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Date of NPA classification (if applicable)</td></tr>
+              <tr><td class="col-name">days_past_due</td><td class="col-type">INTEGER</td><td>DEFAULT 0</td><td class="col-desc">Days overdue on repayment</td></tr>
+              <tr><td class="col-name">accrued_interest</td><td class="col-type">BIGINT</td><td>DEFAULT 0</td><td class="col-desc">Accrued but unpaid interest</td></tr>
+              <tr><td class="col-name">loan_agreement_url</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Link to executed loan agreement</td></tr>
+              <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Record creation</td></tr>
+              <tr><td class="col-name">updated_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc">Last update</td></tr>
+            </tbody>
+          </table>
+          <pre class="sql-block" id="sql-loans"><span class="sql-cmt">-- LOANS: Full loan facility structure</span>
+<span class="sql-kw">CREATE TABLE</span> loans (
+  id                   <span class="sql-type">TEXT</span>           <span class="sql-kw">PRIMARY KEY</span>,
+  project_id           <span class="sql-type">TEXT</span>           <span class="sql-kw">REFERENCES</span> projects(id),
+  developer_id         <span class="sql-type">TEXT</span>           <span class="sql-kw">REFERENCES</span> developers(id),
+  sanctioned_amount    <span class="sql-type">BIGINT</span>         <span class="sql-kw">NOT NULL</span>,
+  disbursed_amount     <span class="sql-type">BIGINT</span>         <span class="sql-kw">DEFAULT</span> 0,
+  outstanding_amount   <span class="sql-type">BIGINT</span>         <span class="sql-kw">DEFAULT</span> 0,
+  undisbursed_amount   <span class="sql-type">BIGINT</span>         <span class="sql-kw">GENERATED ALWAYS AS</span> (sanctioned_amount - disbursed_amount) <span class="sql-kw">STORED</span>,
+  interest_rate        <span class="sql-type">NUMERIC</span>(5,2),
+  interest_type        <span class="sql-type">TEXT</span>           <span class="sql-kw">CHECK</span>(interest_type <span class="sql-kw">IN</span> (<span class="sql-str">'FIXED'</span>,<span class="sql-str">'FLOATING'</span>)),
+  benchmark_rate       <span class="sql-type">TEXT</span>,
+  spread_bps           <span class="sql-type">INTEGER</span>,
+  loan_type            <span class="sql-type">TEXT</span>,
+  tenure               <span class="sql-type">INTEGER</span>,
+  moratorium_months    <span class="sql-type">INTEGER</span>        <span class="sql-kw">DEFAULT</span> 0,
+  start_date           <span class="sql-type">DATE</span>,
+  end_date             <span class="sql-type">DATE</span>,
+  next_repayment_date  <span class="sql-type">DATE</span>,
+  repayment_amount     <span class="sql-type">BIGINT</span>,
+  lender               <span class="sql-type">TEXT</span>,
+  lender_category      <span class="sql-type">TEXT</span>,
+  security_type        <span class="sql-type">TEXT</span>,
+  collateral_value     <span class="sql-type">BIGINT</span>,
+  status               <span class="sql-type">TEXT</span>           <span class="sql-kw">DEFAULT</span> <span class="sql-str">'ACTIVE'</span> <span class="sql-kw">CHECK</span>(status <span class="sql-kw">IN</span> (<span class="sql-str">'ACTIVE'</span>,<span class="sql-str">'WATCH'</span>,<span class="sql-str">'NPA'</span>,<span class="sql-str">'CLOSED'</span>)),
+  npa_date             <span class="sql-type">DATE</span>,
+  days_past_due        <span class="sql-type">INTEGER</span>        <span class="sql-kw">DEFAULT</span> 0,
+  accrued_interest     <span class="sql-type">BIGINT</span>         <span class="sql-kw">DEFAULT</span> 0,
+  loan_agreement_url   <span class="sql-type">TEXT</span>,
+  created_at           <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>(),
+  updated_at           <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_loans_project  <span class="sql-kw">ON</span> loans(project_id);
+<span class="sql-kw">CREATE INDEX</span> idx_loans_status   <span class="sql-kw">ON</span> loans(status);
+<span class="sql-kw">CREATE INDEX</span> idx_loans_dpd      <span class="sql-kw">ON</span> loans(days_past_due);
+<span class="sql-kw">CREATE INDEX</span> idx_loans_maturity <span class="sql-kw">ON</span> loans(end_date);</pre>
+        </div>
+
+        <!-- TABLE: covenants -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-name">covenants</span>
+            <span class="table-desc">Loan covenant tracker — breach detection and waiver management</span>
+            <button class="copy-btn" onclick="copySQL('sql-covenants')">Copy SQL</button>
+          </div>
+          <table class="field-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="col-name">id</td><td class="col-type">UUID</td><td class="col-constraint pk">PK DEFAULT gen_random_uuid()</td><td class="col-desc"></td></tr>
+              <tr><td class="col-name">loan_id</td><td class="col-type">TEXT</td><td class="col-constraint fk">FK → loans.id</td><td class="col-desc">Parent loan facility</td></tr>
+              <tr><td class="col-name">covenant_type</td><td class="col-type">TEXT</td><td>NOT NULL</td><td class="col-desc">DSCR / LTV / LTC / SALES_VELOCITY / ESCROW / CONSTRUCTION / FINANCIAL</td></tr>
+              <tr><td class="col-name">description</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Plain-language covenant description</td></tr>
+              <tr><td class="col-name">threshold_value</td><td class="col-type">NUMERIC(10,4)</td><td>NOT NULL</td><td class="col-desc">Minimum / maximum threshold (e.g. 1.25 for DSCR)</td></tr>
+              <tr><td class="col-name">threshold_direction</td><td class="col-type">TEXT</td><td>CHECK (MIN,MAX)</td><td class="col-desc">Whether actual must be above (MIN) or below (MAX)</td></tr>
+              <tr><td class="col-name">current_value</td><td class="col-type">NUMERIC(10,4)</td><td></td><td class="col-desc">Latest actual value</td></tr>
+              <tr><td class="col-name">is_breached</td><td class="col-type">BOOLEAN</td><td>DEFAULT false</td><td class="col-desc">Current breach flag — auto-updated by trigger</td></tr>
+              <tr><td class="col-name">breach_date</td><td class="col-type">DATE</td><td></td><td class="col-desc">Date of first breach (null if none)</td></tr>
+              <tr><td class="col-name">cure_period_days</td><td class="col-type">INTEGER</td><td></td><td class="col-desc">Days allowed to cure before default event</td></tr>
+              <tr><td class="col-name">waiver_granted</td><td class="col-type">BOOLEAN</td><td>DEFAULT false</td><td class="col-desc">Whether lender has granted a waiver</td></tr>
+              <tr><td class="col-name">waiver_expiry</td><td class="col-type">DATE</td><td></td><td class="col-desc">Waiver valid until date</td></tr>
+              <tr><td class="col-name">waiver_notes</td><td class="col-type">TEXT</td><td></td><td class="col-desc">Waiver conditions / notes</td></tr>
+              <tr><td class="col-name">test_frequency</td><td class="col-type">TEXT</td><td></td><td class="col-desc">MONTHLY / QUARTERLY / ANNUAL</td></tr>
+              <tr><td class="col-name">last_tested</td><td class="col-type">DATE</td><td></td><td class="col-desc">Last covenant test date</td></tr>
+              <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc"></td></tr>
+              <tr><td class="col-name">updated_at</td><td class="col-type">TIMESTAMPTZ</td><td>DEFAULT NOW()</td><td class="col-desc"></td></tr>
+            </tbody>
+          </table>
+          <pre class="sql-block" id="sql-covenants"><span class="sql-cmt">-- COVENANTS: Loan covenant breach tracking</span>
+<span class="sql-kw">CREATE TABLE</span> covenants (
+  id                   <span class="sql-type">UUID</span>           <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  loan_id              <span class="sql-type">TEXT</span>           <span class="sql-kw">REFERENCES</span> loans(id),
+  covenant_type        <span class="sql-type">TEXT</span>           <span class="sql-kw">NOT NULL</span>,
+  description          <span class="sql-type">TEXT</span>,
+  threshold_value      <span class="sql-type">NUMERIC</span>(10,4)  <span class="sql-kw">NOT NULL</span>,
+  threshold_direction  <span class="sql-type">TEXT</span>           <span class="sql-kw">CHECK</span>(threshold_direction <span class="sql-kw">IN</span> (<span class="sql-str">'MIN'</span>,<span class="sql-str">'MAX'</span>)),
+  current_value        <span class="sql-type">NUMERIC</span>(10,4),
+  is_breached          <span class="sql-type">BOOLEAN</span>        <span class="sql-kw">DEFAULT</span> <span class="sql-kw">false</span>,
+  breach_date          <span class="sql-type">DATE</span>,
+  cure_period_days     <span class="sql-type">INTEGER</span>,
+  waiver_granted       <span class="sql-type">BOOLEAN</span>        <span class="sql-kw">DEFAULT</span> <span class="sql-kw">false</span>,
+  waiver_expiry        <span class="sql-type">DATE</span>,
+  waiver_notes         <span class="sql-type">TEXT</span>,
+  test_frequency       <span class="sql-type">TEXT</span>           <span class="sql-kw">CHECK</span>(test_frequency <span class="sql-kw">IN</span> (<span class="sql-str">'MONTHLY'</span>,<span class="sql-str">'QUARTERLY'</span>,<span class="sql-str">'ANNUAL'</span>)),
+  last_tested          <span class="sql-type">DATE</span>,
+  created_at           <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>(),
+  updated_at           <span class="sql-type">TIMESTAMPTZ</span>    <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-cmt">-- Auto-update is_breached via trigger</span>
+<span class="sql-kw">CREATE OR REPLACE FUNCTION</span> <span class="sql-fn">check_covenant_breach</span>() <span class="sql-kw">RETURNS TRIGGER AS</span> $$
+<span class="sql-kw">BEGIN</span>
+  <span class="sql-kw">IF</span> NEW.threshold_direction = <span class="sql-str">'MIN'</span> <span class="sql-kw">AND</span> NEW.current_value &lt; NEW.threshold_value <span class="sql-kw">THEN</span>
+    NEW.is_breached := <span class="sql-kw">true</span>;
+    <span class="sql-kw">IF</span> OLD.is_breached = <span class="sql-kw">false</span> <span class="sql-kw">THEN</span> NEW.breach_date := <span class="sql-fn">CURRENT_DATE</span>; <span class="sql-kw">END IF</span>;
+  <span class="sql-kw">ELSIF</span> NEW.threshold_direction = <span class="sql-str">'MAX'</span> <span class="sql-kw">AND</span> NEW.current_value &gt; NEW.threshold_value <span class="sql-kw">THEN</span>
+    NEW.is_breached := <span class="sql-kw">true</span>;
+    <span class="sql-kw">IF</span> OLD.is_breached = <span class="sql-kw">false</span> <span class="sql-kw">THEN</span> NEW.breach_date := <span class="sql-fn">CURRENT_DATE</span>; <span class="sql-kw">END IF</span>;
+  <span class="sql-kw">ELSE</span>
+    NEW.is_breached := <span class="sql-kw">false</span>;
+  <span class="sql-kw">END IF</span>;
+  <span class="sql-kw">RETURN</span> NEW;
+<span class="sql-kw">END</span>;
+$$ <span class="sql-kw">LANGUAGE</span> plpgsql;
+
+<span class="sql-kw">CREATE TRIGGER</span> trig_covenant_breach
+  <span class="sql-kw">BEFORE INSERT OR UPDATE ON</span> covenants
+  <span class="sql-kw">FOR EACH ROW EXECUTE FUNCTION</span> <span class="sql-fn">check_covenant_breach</span>();</pre>
+        </div>
+
+        <!-- REMAINING TABLES COMPACT -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-name">risk_scores · construction_updates · sales_updates · financials · alerts · market_data · portfolio_exposure · lender_reports</span>
+            <button class="copy-btn" onclick="copySQL('sql-remaining')">Copy SQL</button>
+          </div>
+          <pre class="sql-block" id="sql-remaining"><span class="sql-cmt">-- RISK_SCORES: Scored component history per project</span>
+<span class="sql-kw">CREATE TABLE</span> risk_scores (
+  id                      <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id              <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  score_date              <span class="sql-type">DATE</span>          <span class="sql-kw">NOT NULL</span>,
+  total_score             <span class="sql-type">INTEGER</span>,
+  alert_level             <span class="sql-type">TEXT</span>          <span class="sql-kw">CHECK</span>(alert_level <span class="sql-kw">IN</span> (<span class="sql-str">'GREEN'</span>,<span class="sql-str">'AMBER'</span>,<span class="sql-str">'RED'</span>)),
+  financial_health        <span class="sql-type">NUMERIC</span>(5,2),
+  construction_score      <span class="sql-type">NUMERIC</span>(5,2),
+  sales_score             <span class="sql-type">NUMERIC</span>(5,2),
+  cash_flow_score         <span class="sql-type">NUMERIC</span>(5,2),
+  sponsor_score           <span class="sql-type">NUMERIC</span>(5,2),
+  market_score            <span class="sql-type">NUMERIC</span>(5,2),
+  capital_stack_score     <span class="sql-type">NUMERIC</span>(5,2),
+  regulatory_score        <span class="sql-type">NUMERIC</span>(5,2),
+  score_notes             <span class="sql-type">TEXT</span>,
+  scored_by               <span class="sql-type">TEXT</span>,
+  created_at              <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_risk_project_date <span class="sql-kw">ON</span> risk_scores(project_id, score_date <span class="sql-kw">DESC</span>);
+
+<span class="sql-cmt">-- CONSTRUCTION_UPDATES: Monthly construction field reports</span>
+<span class="sql-kw">CREATE TABLE</span> construction_updates (
+  id                    <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id            <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  update_date           <span class="sql-type">DATE</span>          <span class="sql-kw">NOT NULL</span>,
+  actual_progress       <span class="sql-type">NUMERIC</span>(5,2),
+  scheduled_progress    <span class="sql-type">NUMERIC</span>(5,2),
+  milestone_reached     <span class="sql-type">TEXT</span>,
+  next_milestone        <span class="sql-type">TEXT</span>,
+  cost_to_date          <span class="sql-type">BIGINT</span>,
+  approved_cost         <span class="sql-type">BIGINT</span>,
+  cost_overrun_pct      <span class="sql-type">NUMERIC</span>(6,2),
+  revised_completion    <span class="sql-type">DATE</span>,
+  delay_reason          <span class="sql-type">TEXT</span>,
+  contractor_name       <span class="sql-type">TEXT</span>,
+  notes                 <span class="sql-type">TEXT</span>,
+  site_visit_done       <span class="sql-type">BOOLEAN</span>       <span class="sql-kw">DEFAULT</span> <span class="sql-kw">false</span>,
+  reported_by           <span class="sql-type">TEXT</span>,
+  document_url          <span class="sql-type">TEXT</span>,
+  created_at            <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_constr_project_date <span class="sql-kw">ON</span> construction_updates(project_id, update_date <span class="sql-kw">DESC</span>);
+
+<span class="sql-cmt">-- SALES_UPDATES: Monthly sales and collections</span>
+<span class="sql-kw">CREATE TABLE</span> sales_updates (
+  id                    <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id            <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  update_month          <span class="sql-type">DATE</span>          <span class="sql-kw">NOT NULL</span>,
+  units_sold_month      <span class="sql-type">INTEGER</span>,
+  cumulative_sold       <span class="sql-type">INTEGER</span>,
+  monthly_target        <span class="sql-type">INTEGER</span>,
+  cancellations         <span class="sql-type">INTEGER</span>       <span class="sql-kw">DEFAULT</span> 0,
+  net_sales             <span class="sql-type">INTEGER</span>       <span class="sql-fn">GENERATED ALWAYS AS</span> (units_sold_month - cancellations) <span class="sql-kw">STORED</span>,
+  avg_price_psf         <span class="sql-type">NUMERIC</span>(10,2),
+  gross_sales_value     <span class="sql-type">BIGINT</span>,
+  collections_cr        <span class="sql-type">NUMERIC</span>(14,2),
+  outstanding_receivables <span class="sql-type">BIGINT</span>,
+  channel_sales_pct     <span class="sql-type">NUMERIC</span>(5,2),
+  direct_sales_pct      <span class="sql-type">NUMERIC</span>(5,2),
+  created_at            <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_sales_project_month <span class="sql-kw">ON</span> sales_updates(project_id, update_month <span class="sql-kw">DESC</span>);
+
+<span class="sql-cmt">-- FINANCIALS: Periodic financial statements per project</span>
+<span class="sql-kw">CREATE TABLE</span> financials (
+  id                      <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id              <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  period                  <span class="sql-type">DATE</span>          <span class="sql-kw">NOT NULL</span>,
+  period_type             <span class="sql-type">TEXT</span>          <span class="sql-kw">CHECK</span>(period_type <span class="sql-kw">IN</span> (<span class="sql-str">'MONTHLY'</span>,<span class="sql-str">'QUARTERLY'</span>,<span class="sql-str">'ANNUAL'</span>)),
+  revenue                 <span class="sql-type">BIGINT</span>,
+  cost_of_construction    <span class="sql-type">BIGINT</span>,
+  operating_expenses      <span class="sql-type">BIGINT</span>,
+  ebitda                  <span class="sql-type">BIGINT</span>,
+  interest_expense        <span class="sql-type">BIGINT</span>,
+  net_cashflow            <span class="sql-type">BIGINT</span>,
+  dscr                    <span class="sql-type">NUMERIC</span>(6,3),
+  collection_efficiency   <span class="sql-type">NUMERIC</span>(5,2),
+  escrow_balance          <span class="sql-type">BIGINT</span>,
+  escrow_required         <span class="sql-type">BIGINT</span>,
+  cash_on_hand            <span class="sql-type">BIGINT</span>,
+  created_at              <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_financials_project_period <span class="sql-kw">ON</span> financials(project_id, period <span class="sql-kw">DESC</span>);
+
+<span class="sql-cmt">-- ALERTS: Early warning signal log</span>
+<span class="sql-kw">CREATE TABLE</span> alerts (
+  id                  <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id          <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  type                <span class="sql-type">TEXT</span>          <span class="sql-kw">NOT NULL CHECK</span>(type <span class="sql-kw">IN</span> (<span class="sql-str">'RED'</span>,<span class="sql-str">'AMBER'</span>,<span class="sql-str">'GREEN'</span>)),
+  category            <span class="sql-type">TEXT</span>          <span class="sql-kw">NOT NULL</span>,
+  message             <span class="sql-type">TEXT</span>,
+  trigger_value       <span class="sql-type">NUMERIC</span>(10,4),
+  threshold_value     <span class="sql-type">NUMERIC</span>(10,4),
+  acknowledged        <span class="sql-type">BOOLEAN</span>       <span class="sql-kw">DEFAULT</span> <span class="sql-kw">false</span>,
+  acknowledged_by     <span class="sql-type">TEXT</span>,
+  acknowledged_at     <span class="sql-type">TIMESTAMPTZ</span>,
+  resolution_notes    <span class="sql-type">TEXT</span>,
+  resolved_at         <span class="sql-type">TIMESTAMPTZ</span>,
+  created_at          <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_alerts_project   <span class="sql-kw">ON</span> alerts(project_id);
+<span class="sql-kw">CREATE INDEX</span> idx_alerts_type      <span class="sql-kw">ON</span> alerts(type);
+<span class="sql-kw">CREATE INDEX</span> idx_alerts_unacked   <span class="sql-kw">ON</span> alerts(acknowledged) <span class="sql-kw">WHERE</span> acknowledged = <span class="sql-kw">false</span>;
+
+<span class="sql-cmt">-- MARKET_DATA: City-level real estate market intelligence</span>
+<span class="sql-kw">CREATE TABLE</span> market_data (
+  id                <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  city              <span class="sql-type">TEXT</span>          <span class="sql-kw">NOT NULL</span>,
+  quarter           <span class="sql-type">TEXT</span>          <span class="sql-kw">NOT NULL</span>,
+  avg_price_psf     <span class="sql-type">NUMERIC</span>(10,2),
+  price_change_pct  <span class="sql-type">NUMERIC</span>(6,2),
+  absorption_rate   <span class="sql-type">NUMERIC</span>(5,2),
+  inventory_months  <span class="sql-type">INTEGER</span>,
+  new_supply_units  <span class="sql-type">INTEGER</span>,
+  demand_index      <span class="sql-type">INTEGER</span>,
+  unsold_inventory  <span class="sql-type">INTEGER</span>,
+  avg_yield_pct     <span class="sql-type">NUMERIC</span>(5,2),
+  source            <span class="sql-type">TEXT</span>,
+  created_at        <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>(),
+  <span class="sql-kw">UNIQUE</span>(city, quarter)
+);
+<span class="sql-kw">CREATE INDEX</span> idx_market_city_q <span class="sql-kw">ON</span> market_data(city, quarter <span class="sql-kw">DESC</span>);
+
+<span class="sql-cmt">-- PORTFOLIO_EXPOSURE: Monthly portfolio-wide snapshots</span>
+<span class="sql-kw">CREATE TABLE</span> portfolio_exposure (
+  id                   <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  snapshot_date        <span class="sql-type">DATE</span>          <span class="sql-kw">NOT NULL UNIQUE</span>,
+  total_sanctioned     <span class="sql-type">BIGINT</span>,
+  total_disbursed      <span class="sql-type">BIGINT</span>,
+  total_outstanding    <span class="sql-type">BIGINT</span>,
+  npa_amount           <span class="sql-type">BIGINT</span>        <span class="sql-kw">DEFAULT</span> 0,
+  watch_amount         <span class="sql-type">BIGINT</span>        <span class="sql-kw">DEFAULT</span> 0,
+  active_amount        <span class="sql-type">BIGINT</span>        <span class="sql-kw">DEFAULT</span> 0,
+  green_count          <span class="sql-type">INTEGER</span>,
+  amber_count          <span class="sql-type">INTEGER</span>,
+  red_count            <span class="sql-type">INTEGER</span>,
+  npa_ratio_pct        <span class="sql-type">NUMERIC</span>(6,3),
+  weighted_avg_dscr    <span class="sql-type">NUMERIC</span>(6,3),
+  weighted_avg_ltv     <span class="sql-type">NUMERIC</span>(5,2),
+  created_at           <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+
+<span class="sql-cmt">-- LENDER_REPORTS: Audit trail of generated reports</span>
+<span class="sql-kw">CREATE TABLE</span> lender_reports (
+  id              <span class="sql-type">UUID</span>          <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+  project_id      <span class="sql-type">TEXT</span>          <span class="sql-kw">REFERENCES</span> projects(id),
+  report_type     <span class="sql-type">TEXT</span>          <span class="sql-kw">CHECK</span>(report_type <span class="sql-kw">IN</span> (<span class="sql-str">'MONTHLY'</span>,<span class="sql-str">'QUARTERLY'</span>,<span class="sql-str">'ANNUAL'</span>,<span class="sql-str">'ADHOC'</span>,<span class="sql-str">'NPA_NOTICE'</span>)),
+  report_period   <span class="sql-type">DATE</span>,
+  format          <span class="sql-type">TEXT</span>          <span class="sql-kw">CHECK</span>(format <span class="sql-kw">IN</span> (<span class="sql-str">'PDF'</span>,<span class="sql-str">'CSV'</span>,<span class="sql-str">'EXCEL'</span>)),
+  file_url        <span class="sql-type">TEXT</span>,
+  risk_score_at   <span class="sql-type">INTEGER</span>,
+  alert_level_at  <span class="sql-type">TEXT</span>,
+  generated_by    <span class="sql-type">TEXT</span>,
+  sent_to         <span class="sql-type">TEXT[]</span>,
+  created_at      <span class="sql-type">TIMESTAMPTZ</span>   <span class="sql-kw">DEFAULT</span> <span class="sql-fn">NOW</span>()
+);
+
+<span class="sql-cmt">-- ===== ROW LEVEL SECURITY =====</span>
+<span class="sql-kw">ALTER TABLE</span> projects          <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> developers        <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> loans             <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> covenants         <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> alerts            <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> risk_scores       <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> construction_updates <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> sales_updates     <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> financials        <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="sql-kw">ALTER TABLE</span> lender_reports    <span class="sql-kw">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="sql-cmt">-- Read policy: authenticated users only</span>
+<span class="sql-kw">CREATE POLICY</span> rls_read_projects      <span class="sql-kw">ON</span> projects          <span class="sql-kw">FOR SELECT TO</span> authenticated <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+<span class="sql-kw">CREATE POLICY</span> rls_read_developers    <span class="sql-kw">ON</span> developers        <span class="sql-kw">FOR SELECT TO</span> authenticated <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+<span class="sql-kw">CREATE POLICY</span> rls_read_loans         <span class="sql-kw">ON</span> loans             <span class="sql-kw">FOR SELECT TO</span> authenticated <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+<span class="sql-kw">CREATE POLICY</span> rls_read_alerts        <span class="sql-kw">ON</span> alerts            <span class="sql-kw">FOR SELECT TO</span> authenticated <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+
+<span class="sql-cmt">-- Write policy: service role only (backend API)</span>
+<span class="sql-kw">CREATE POLICY</span> rls_write_projects     <span class="sql-kw">ON</span> projects          <span class="sql-kw">FOR ALL TO</span> service_role <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+<span class="sql-kw">CREATE POLICY</span> rls_write_loans        <span class="sql-kw">ON</span> loans             <span class="sql-kw">FOR ALL TO</span> service_role <span class="sql-kw">USING</span> (<span class="sql-kw">true</span>);
+
+<span class="sql-cmt">-- ===== USEFUL VIEWS =====</span>
+<span class="sql-kw">CREATE VIEW</span> v_portfolio_summary <span class="sql-kw">AS</span>
+  <span class="sql-kw">SELECT</span>
+    p.alert_level,
+    <span class="sql-fn">COUNT</span>(*) <span class="sql-kw">AS</span> project_count,
+    <span class="sql-fn">SUM</span>(l.outstanding_amount) <span class="sql-kw">AS</span> total_exposure,
+    <span class="sql-fn">AVG</span>(p.risk_score) <span class="sql-kw">AS</span> avg_risk_score,
+    <span class="sql-fn">AVG</span>(p.dscr) <span class="sql-kw">AS</span> avg_dscr,
+    <span class="sql-fn">AVG</span>(p.ltv) <span class="sql-kw">AS</span> avg_ltv
+  <span class="sql-kw">FROM</span> projects p
+  <span class="sql-kw">LEFT JOIN</span> loans l <span class="sql-kw">ON</span> p.loan_id = l.id
+  <span class="sql-kw">GROUP BY</span> p.alert_level;
+
+<span class="sql-kw">CREATE VIEW</span> v_active_breaches <span class="sql-kw">AS</span>
+  <span class="sql-kw">SELECT</span> c.*, l.project_id, p.name <span class="sql-kw">AS</span> project_name, p.alert_level
+  <span class="sql-kw">FROM</span> covenants c
+  <span class="sql-kw">JOIN</span> loans l <span class="sql-kw">ON</span> c.loan_id = l.id
+  <span class="sql-kw">JOIN</span> projects p <span class="sql-kw">ON</span> l.project_id = p.id
+  <span class="sql-kw">WHERE</span> c.is_breached = <span class="sql-kw">true</span> <span class="sql-kw">AND</span> c.waiver_granted = <span class="sql-kw">false</span>;
+
+<span class="sql-kw">CREATE VIEW</span> v_upcoming_maturities <span class="sql-kw">AS</span>
+  <span class="sql-kw">SELECT</span> l.*, p.name, p.alert_level, d.name <span class="sql-kw">AS</span> developer_name
+  <span class="sql-kw">FROM</span> loans l
+  <span class="sql-kw">JOIN</span> projects p <span class="sql-kw">ON</span> l.project_id = p.id
+  <span class="sql-kw">JOIN</span> developers d <span class="sql-kw">ON</span> l.developer_id = d.id
+  <span class="sql-kw">WHERE</span> l.end_date &lt;= <span class="sql-fn">CURRENT_DATE</span> + <span class="sql-kw">INTERVAL</span> <span class="sql-str">'90 days'</span>
+    <span class="sql-kw">AND</span> l.status <span class="sql-kw">NOT IN</span> (<span class="sql-str">'CLOSED'</span>,'<span class="sql-str">NPA'</span>)
+  <span class="sql-kw">ORDER BY</span> l.end_date <span class="sql-kw">ASC</span>;</pre>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function copySQL(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector(`[onclick="copySQL('${id}')"]`);
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy SQL', 2000);
+  });
+}
+function copyAllSQL() {
+  const all = document.querySelectorAll('.sql-block');
+  const text = Array.from(all).map(el => el.innerText).join('\n\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyAllSQL()"]');
+    btn.textContent = '✓ All SQL Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Full SQL', 2000);
+  });
+}
+</script>
+</body>
+</html>

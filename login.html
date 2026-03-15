@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Sign In</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js" onerror="console.warn('No config.js found, using defaults')"></script>
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-grid-bg"></div>
+  <!-- Animated grid dots -->
+  <canvas id="bgCanvas" style="position:absolute;inset:0;pointer-events:none;opacity:0.4"></canvas>
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">◈</div>
+      NEXUS ASIA
+    </div>
+    <div class="login-title">Real Estate Credit Intelligence Terminal</div>
+
+    <div id="loginForm">
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px">Email Address</label>
+        <input type="email" id="emailInput" class="login-input" placeholder="analyst@fund.com" autocomplete="email">
+      </div>
+      <div style="margin-bottom:4px">
+        <label style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:5px">Password</label>
+        <input type="password" id="passInput" class="login-input" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="login-error" id="loginError">⚠ Invalid credentials. Please try again.</div>
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()">
+        <span id="loginBtnText">Access Terminal →</span>
+      </button>
+
+      <div class="demo-accounts">
+        <div class="demo-title">Demo Accounts (click to fill)</div>
+        <div class="demo-row">
+          <span class="demo-email" onclick="fillDemo('cro@nexusasia.fund','CROdemo2024!')">cro@nexusasia.fund</span>
+          <span class="role-badge role-cro">CRO</span>
+        </div>
+        <div class="demo-row">
+          <span class="demo-email" onclick="fillDemo('pm@nexusasia.fund','PMdemo2024!')">pm@nexusasia.fund</span>
+          <span class="role-badge role-pm">Portfolio Manager</span>
+        </div>
+        <div class="demo-row">
+          <span class="demo-email" onclick="fillDemo('analyst@nexusasia.fund','Analyst2024!')">analyst@nexusasia.fund</span>
+          <span class="role-badge role-analyst">Analyst</span>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:var(--bg-surface);border-radius:var(--radius);font-size:10px;color:var(--text-muted)">
+          💡 <strong style="color:var(--cyan)">Offline mode:</strong> If Supabase is not configured, the terminal runs on seed data automatically. Click any demo account or just proceed.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data/seed-data.js"></script>
+<script>
+// Supabase client (inline, minimal)
+const SB_URL  = window.__NEXUS_SUPABASE_URL  || 'https://placeholder.supabase.co';
+const SB_ANON = window.__NEXUS_SUPABASE_ANON || 'placeholder';
+let _sbClient = null;
+
+function getSBClient() {
+  if (!_sbClient && typeof window.supabase !== 'undefined') {
+    try { _sbClient = window.supabase.createClient(SB_URL, SB_ANON); } catch(e) {}
+  }
+  return _sbClient;
+}
+
+async function handleLogin() {
+  const email = document.getElementById('emailInput').value.trim();
+  const pass  = document.getElementById('passInput').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+
+  if (!email || !pass) { showError('Please enter email and password.'); return; }
+
+  btn.disabled = true;
+  document.getElementById('loginBtnText').textContent = 'Authenticating…';
+  errEl.style.display = 'none';
+
+  // Try Supabase auth
+  const sb = getSBClient();
+  if (sb && !SB_URL.includes('placeholder')) {
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      localStorage.setItem('nexus_user', JSON.stringify({ email, role: data.user?.user_metadata?.role || 'ANALYST' }));
+      window.location.href = 'index.html';
+      return;
+    } catch(e) {
+      showError('Authentication failed: ' + e.message);
+      btn.disabled = false;
+      document.getElementById('loginBtnText').textContent = 'Access Terminal →';
+      return;
+    }
+  }
+
+  // Offline demo mode — accept any demo credentials
+  const demoUsers = {
+    'cro@nexusasia.fund':     { role: 'CRO',    name: 'Chief Risk Officer' },
+    'pm@nexusasia.fund':      { role: 'PM',     name: 'Portfolio Manager' },
+    'analyst@nexusasia.fund': { role: 'ANALYST', name: 'Credit Analyst' }
+  };
+  const demo = demoUsers[email.toLowerCase()];
+  if (demo) {
+    localStorage.setItem('nexus_user', JSON.stringify({ email, role: demo.role, name: demo.name, offline: true }));
+    window.location.href = 'index.html';
+    return;
+  }
+  // Accept any credentials in offline mode
+  localStorage.setItem('nexus_user', JSON.stringify({ email, role: 'ANALYST', name: 'User', offline: true }));
+  window.location.href = 'index.html';
+}
+
+function showError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+function fillDemo(email, pass) {
+  document.getElementById('emailInput').value = email;
+  document.getElementById('passInput').value = pass;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+// Background particle canvas
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i = 0; i < 60; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    size: Math.random() * 2 + 0.5,
+    alpha: Math.random() * 0.4 + 0.1
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,255,204,${p.alpha})`;
+    ctx.fill();
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+</script>
+</body>
+</html>
