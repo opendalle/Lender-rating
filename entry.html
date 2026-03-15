@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS ASIA — Data Entry</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* ── TABS ── */
+.entry-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-deep);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.entry-tab {
+  padding: 12px 20px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+.entry-tab:hover  { color: var(--text-primary); background: var(--bg-surface); }
+.entry-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); background: var(--bg-dark); }
+
+/* ── FORMS ── */
+.form-section { margin-bottom: 28px; }
+.form-section-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr;       gap: 14px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 14px; }
+.form-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+.field-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.field-label .req { color: var(--red); }
+.field-label .hint { color: var(--text-muted); font-size: 9px; text-transform: none; letter-spacing: 0; font-style: italic; }
+
+.f-input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  font-family: var(--font-sans);
+}
+.f-input:focus  { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,255,204,0.08); }
+.f-input.error  { border-color: var(--red); }
+.f-input.ok     { border-color: var(--green); }
+
+.f-select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 9px 12px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238888aa'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 30px;
+  transition: border-color 0.15s;
+}
+.f-select:focus { border-color: var(--cyan); outline: none; }
+
+.f-textarea {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 9px 12px;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  width: 100%;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+.f-textarea:focus { border-color: var(--cyan); }
+
+.field-error  { font-size: 10px; color: var(--red);   margin-top: 3px; font-family: var(--font-mono); }
+.field-helper { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+/* ── RANGE INPUTS ── */
+.range-wrap { display: flex; align-items: center; gap: 10px; }
+.f-range { flex: 1; accent-color: var(--cyan); cursor: pointer; }
+.range-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 52px;
+  text-align: right;
+  color: var(--cyan);
+}
+
+/* ── LIVE PREVIEW ── */
+.live-preview {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  position: sticky;
+  top: 20px;
+}
+.preview-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preview-score-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.preview-score-num {
+  font-family: var(--font-mono);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+}
+.preview-metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.preview-metric:last-child { border-bottom: none; }
+.preview-metric .pk { color: var(--text-muted); }
+.preview-metric .pv { font-family: var(--font-mono); font-weight: 600; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 12px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  max-width: 360px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--green); }
+.toast.error   { border-color: var(--red); }
+.toast.info    { border-color: var(--cyan); }
+
+/* ── CSV PREVIEW TABLE ── */
+.csv-preview {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: auto;
+  max-height: 300px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.csv-preview table { border-collapse: collapse; white-space: nowrap; }
+.csv-preview th { background: var(--bg-mid); padding: 6px 10px; color: var(--text-muted); text-align: left; position: sticky; top: 0; }
+.csv-preview td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.csv-preview tr:hover td { background: var(--bg-surface); }
+.csv-error-row td { color: var(--red); background: var(--red-bg) !important; }
+
+/* ── STEP INDICATOR ── */
+.step-dots { display: flex; gap: 6px; align-items: center; }
+.step-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); transition: all 0.2s; }
+.step-dot.done   { background: var(--green); }
+.step-dot.active { background: var(--cyan); transform: scale(1.3); }
+
+/* ── PROGRESS ── */
+.upload-progress { height: 4px; background: var(--bg-surface); border-radius: 2px; overflow: hidden; margin-top: 10px; display: none; }
+.upload-progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple)); border-radius: 2px; transition: width 0.3s ease; }
+
+@media (max-width: 1100px) {
+  .entry-layout { flex-direction: column !important; }
+  .entry-preview { display: none; }
+  .form-grid-3, .form-grid-4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="terminal-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">NEXUS ASIA · <span>DATA ENTRY</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+        <div class="step-dots" id="stepDots"></div>
+        <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)" id="autoSaveLabel"></span>
+        <a href="index.html" class="btn btn-sm btn-ghost">← Terminal</a>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="entry-tabs" id="entryTabs">
+      <div class="entry-tab active"  data-tab="monthly"     onclick="switchTab('monthly',this)">📊 Monthly Update</div>
+      <div class="entry-tab"         data-tab="construction" onclick="switchTab('construction',this)">🏗 Construction</div>
+      <div class="entry-tab"         data-tab="sales"        onclick="switchTab('sales',this)">🏠 Sales</div>
+      <div class="entry-tab"         data-tab="financial"    onclick="switchTab('financial',this)">💰 Financial</div>
+      <div class="entry-tab"         data-tab="newproject"   onclick="switchTab('newproject',this)">➕ New Project</div>
+      <div class="entry-tab"         data-tab="newloan"      onclick="switchTab('newloan',this)">💳 New Loan</div>
+      <div class="entry-tab"         data-tab="developer"    onclick="switchTab('developer',this)">👤 Developer</div>
+      <div class="entry-tab"         data-tab="csv"          onclick="switchTab('csv',this)">📂 CSV Upload</div>
+    </div>
+
+    <div class="page-content">
+      <div style="display:flex;gap:20px;" class="entry-layout">
+
+        <!-- FORM AREA -->
+        <div style="flex:1;min-width:0">
+
+          <!-- ═══════════════════════════════════
+               TAB 1: MONTHLY PROJECT UPDATE
+          ═══════════════════════════════════ -->
+          <div id="tab-monthly">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Monthly Project Update</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Update key monitoring metrics for any project. Run this every month after receiving site reports and sales data.</div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">1. Select Project</span></div>
+              <div class="panel-body">
+                <div class="form-grid-2">
+                  <div class="field-group">
+                    <div class="field-label">Project <span class="req">*</span></div>
+                    <select class="f-select" id="m_projectId" onchange="onProjectSelect('m')">
+                      <option value="">— Select project —</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Update Period <span class="req">*</span></div>
+                    <input type="month" class="f-input" id="m_period">
+                  </div>
+                </div>
+                <div id="m_projectInfo" style="display:none;margin-top:12px;padding:12px;background:var(--bg-surface);border-radius:var(--radius);border:1px solid var(--border)"></div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">2. Construction Progress</span></div>
+              <div class="panel-body">
+                <div class="form-grid-2" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">Actual Progress (%) <span class="req">*</span> <span class="hint">— as per engineer certificate</span></div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="m_constProgress" min="0" max="100" value="0" step="0.5" oninput="syncRange('m_constProgress','m_constProgressVal','%');liveScore()">
+                      <span class="range-val" id="m_constProgressVal">0%</span>
+                    </div>
+                    <input type="number" class="f-input" id="m_constProgressNum" min="0" max="100" step="0.1" placeholder="Or type exact value" oninput="syncNumToRange('m_constProgressNum','m_constProgress','m_constProgressVal','%');liveScore()" style="margin-top:6px">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Scheduled Progress (%) <span class="req">*</span> <span class="hint">— per original schedule</span></div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="m_schedProgress" min="0" max="100" value="0" step="0.5" oninput="syncRange('m_schedProgress','m_schedProgressVal','%');liveScore()">
+                      <span class="range-val" id="m_schedProgressVal">0%</span>
+                    </div>
+                    <input type="number" class="f-input" id="m_schedProgressNum" min="0" max="100" step="0.1" placeholder="Or type exact value" oninput="syncNumToRange('m_schedProgressNum','m_schedProgress','m_schedProgressVal','%');liveScore()" style="margin-top:6px">
+                  </div>
+                </div>
+                <div class="form-grid-2">
+                  <div class="field-group">
+                    <div class="field-label">Cost to Date (₹ Crore)</div>
+                    <input type="number" class="f-input" id="m_costToDate" placeholder="e.g. 245.5" step="0.1" oninput="liveScore()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Approved Budget (₹ Crore)</div>
+                    <input type="number" class="f-input" id="m_approvedBudget" placeholder="e.g. 220.0" step="0.1" oninput="calcCostOverrun()">
+                  </div>
+                </div>
+                <div id="costOverrunDisplay" style="display:none;margin-top:10px;padding:8px 12px;border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;font-weight:600"></div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Revised Completion Date</div>
+                    <input type="date" class="f-input" id="m_revisedCompletion">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Delay Reason (if any)</div>
+                    <select class="f-select" id="m_delayReason">
+                      <option value="">None / On track</option>
+                      <option>Labour shortage</option>
+                      <option>Material price escalation</option>
+                      <option>Weather / monsoon</option>
+                      <option>Approval / regulatory delay</option>
+                      <option>Funding shortfall</option>
+                      <option>Contractor issue</option>
+                      <option>Legal dispute</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">3. Sales & Collections</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">Units Sold This Month <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="m_unitsSoldMonth" min="0" placeholder="e.g. 22" oninput="liveScore()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cancellations This Month</div>
+                    <input type="number" class="f-input" id="m_cancellations" min="0" placeholder="e.g. 2" oninput="liveScore()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cumulative Units Sold</div>
+                    <input type="number" class="f-input" id="m_cumulativeSold" min="0" placeholder="e.g. 318" oninput="liveScore()">
+                  </div>
+                </div>
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Avg Realised Price (₹/sqft)</div>
+                    <input type="number" class="f-input" id="m_avgPrice" placeholder="e.g. 12500" oninput="liveScore()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Collections This Month (₹ Cr)</div>
+                    <input type="number" class="f-input" id="m_collections" step="0.1" placeholder="e.g. 18.5" oninput="liveScore()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Outstanding Receivables (₹ Cr)</div>
+                    <input type="number" class="f-input" id="m_receivables" step="0.1" placeholder="e.g. 42.0" oninput="liveScore()">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">4. Financial Metrics</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">DSCR <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="m_dscr" step="0.01" min="0" max="5" placeholder="e.g. 1.42" oninput="liveScore()" style="font-family:var(--font-mono)">
+                    <div class="field-helper">Covenant min: <strong id="dscrMin">1.25</strong></div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">LTV % <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="m_ltv" step="0.1" min="0" max="120" placeholder="e.g. 62" oninput="liveScore()" style="font-family:var(--font-mono)">
+                    <div class="field-helper">Max covenant: <strong>75%</strong></div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">LTC %</div>
+                    <input type="number" class="f-input" id="m_ltc" step="0.1" min="0" max="120" placeholder="e.g. 68" oninput="liveScore()" style="font-family:var(--font-mono)">
+                    <div class="field-helper">Max covenant: <strong>80%</strong></div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cost Overrun %</div>
+                    <input type="number" class="f-input" id="m_costOverrun" step="0.1" min="0" placeholder="e.g. 4.2" oninput="liveScore()" style="font-family:var(--font-mono)">
+                    <div class="field-helper">Red alert: <strong>&gt;20%</strong></div>
+                  </div>
+                </div>
+                <div class="form-grid-2">
+                  <div class="field-group">
+                    <div class="field-label">Escrow Balance (₹ Crore) <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="m_escrowBalance" step="0.1" placeholder="e.g. 28.5" oninput="liveScore()" style="font-family:var(--font-mono)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Escrow Required (₹ Crore) <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="m_escrowRequired" step="0.1" placeholder="e.g. 24.0" oninput="liveScore()" style="font-family:var(--font-mono)">
+                  </div>
+                </div>
+                <div id="escrowWarning" style="display:none;margin-top:8px"></div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:20px">
+              <div class="panel-header"><span class="panel-title">5. Notes & Site Visit</span></div>
+              <div class="panel-body">
+                <div class="form-grid-2" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">Site Visit Conducted?</div>
+                    <select class="f-select" id="m_siteVisit">
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Reported By</div>
+                    <input type="text" class="f-input" id="m_reportedBy" placeholder="Analyst name">
+                  </div>
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Monitoring Notes</div>
+                  <textarea class="f-textarea" id="m_notes" placeholder="Any observations, concerns, or positive developments this month…"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-lg" onclick="submitMonthly()">💾 Save Monthly Update</button>
+              <button class="btn btn-secondary" onclick="saveDraft('monthly')">Save Draft</button>
+              <button class="btn btn-ghost" onclick="clearForm('monthly')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 2: CONSTRUCTION UPDATE
+          ═══════════════════════════════════ -->
+          <div id="tab-construction" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Construction Progress Update</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Log monthly construction data — milestones, costs, contractor details. Feeds directly into risk scoring.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Project & Period</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Project <span class="req">*</span></div>
+                    <select class="f-select" id="c_projectId" onchange="onProjectSelect('c')">
+                      <option value="">— Select project —</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Update Date <span class="req">*</span></div>
+                    <input type="date" class="f-input" id="c_updateDate">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Reported By</div>
+                    <input type="text" class="f-input" id="c_reportedBy" placeholder="Engineer / analyst name">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Progress</span></div>
+              <div class="panel-body">
+                <div class="form-grid-2" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">Actual Progress % <span class="req">*</span></div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="c_actual" min="0" max="100" value="0" step="0.5" oninput="syncRange('c_actual','c_actualVal','%')">
+                      <span class="range-val" id="c_actualVal">0%</span>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Scheduled Progress %</div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="c_scheduled" min="0" max="100" value="0" step="0.5" oninput="syncRange('c_scheduled','c_scheduledVal','%')">
+                      <span class="range-val" id="c_scheduledVal">0%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-grid-2">
+                  <div class="field-group">
+                    <div class="field-label">Milestone Reached</div>
+                    <select class="f-select" id="c_milestone">
+                      <option value="">None this period</option>
+                      <option>Foundation complete</option>
+                      <option>Plinth complete</option>
+                      <option>Podium slab</option>
+                      <option>Structure complete (X floors)</option>
+                      <option>Brickwork complete</option>
+                      <option>External plastering</option>
+                      <option>Internal finishing</option>
+                      <option>MEP rough-in complete</option>
+                      <option>OC application submitted</option>
+                      <option>OC received</option>
+                      <option>Handover commenced</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Next Milestone</div>
+                    <input type="text" class="f-input" id="c_nextMilestone" placeholder="e.g. 20th floor slab by Mar 2025">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Cost & Schedule</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Cost to Date (₹ Cr)</div>
+                    <input type="number" class="f-input" id="c_costToDate" step="0.1" placeholder="245.5">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Approved Cost (₹ Cr)</div>
+                    <input type="number" class="f-input" id="c_approvedCost" step="0.1" placeholder="220.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Revised Completion</div>
+                    <input type="date" class="f-input" id="c_revisedCompletion">
+                  </div>
+                </div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Main Contractor</div>
+                    <input type="text" class="f-input" id="c_contractor" placeholder="e.g. Shapoorji Pallonji">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Delay Reason</div>
+                    <select class="f-select" id="c_delayReason">
+                      <option value="">None</option>
+                      <option>Labour shortage</option><option>Material escalation</option>
+                      <option>Weather</option><option>Regulatory approval</option>
+                      <option>Funding shortfall</option><option>Contractor issue</option>
+                      <option>Legal dispute</option><option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field-group" style="margin-top:14px">
+                  <div class="field-label">Site Visit Notes</div>
+                  <textarea class="f-textarea" id="c_notes" placeholder="Observations from site visit, quality concerns, safety issues, photographs reference…"></textarea>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('construction')">💾 Save Construction Update</button>
+              <button class="btn btn-ghost" onclick="clearForm('construction')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 3: SALES UPDATE
+          ═══════════════════════════════════ -->
+          <div id="tab-sales" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Monthly Sales Update</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Log sales velocity, collections, and channel data. Feeds into sales velocity scoring component.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Project & Month</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Project <span class="req">*</span></div>
+                    <select class="f-select" id="s_projectId" onchange="onProjectSelect('s')">
+                      <option value="">— Select project —</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Month <span class="req">*</span></div>
+                    <input type="month" class="f-input" id="s_month">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Monthly Sales Target</div>
+                    <input type="number" class="f-input" id="s_target" placeholder="e.g. 20">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Sales Data</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Units Sold (Month) <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="s_sold" min="0" style="font-family:var(--font-mono)" oninput="calcNetSales()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cancellations</div>
+                    <input type="number" class="f-input" id="s_cancel" min="0" value="0" style="font-family:var(--font-mono)" oninput="calcNetSales()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Net Sales</div>
+                    <input type="number" class="f-input" id="s_netSales" readonly style="font-family:var(--font-mono);background:var(--bg-mid);color:var(--cyan)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cumulative Sold</div>
+                    <input type="number" class="f-input" id="s_cumulative" min="0" style="font-family:var(--font-mono)">
+                  </div>
+                </div>
+                <div class="form-grid-3" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Avg Realised Price (₹/sqft)</div>
+                    <input type="number" class="f-input" id="s_price" style="font-family:var(--font-mono)" placeholder="e.g. 12500">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Gross Sales Value (₹ Cr)</div>
+                    <input type="number" class="f-input" id="s_grossValue" step="0.1" style="font-family:var(--font-mono)" placeholder="e.g. 45.2">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Collections (₹ Cr)</div>
+                    <input type="number" class="f-input" id="s_collections" step="0.1" style="font-family:var(--font-mono)" placeholder="e.g. 18.5">
+                  </div>
+                </div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Channel Sales %</div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="s_channelPct" min="0" max="100" value="30" step="5" oninput="syncRange('s_channelPct','s_channelPctVal','%');document.getElementById('s_directPct').value=100-this.value;document.getElementById('s_directPctVal').textContent=(100-this.value)+'%'">
+                      <span class="range-val" id="s_channelPctVal">30%</span>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Direct Sales %</div>
+                    <div class="range-wrap">
+                      <input type="range" class="f-range" id="s_directPct" min="0" max="100" value="70" step="5" oninput="syncRange('s_directPct','s_directPctVal','%');document.getElementById('s_channelPct').value=100-this.value;document.getElementById('s_channelPctVal').textContent=(100-this.value)+'%'">
+                      <span class="range-val" id="s_directPctVal">70%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('sales')">💾 Save Sales Update</button>
+              <button class="btn btn-ghost" onclick="clearForm('sales')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 4: FINANCIAL UPDATE
+          ═══════════════════════════════════ -->
+          <div id="tab-financial" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Financial Statement Entry</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Enter P&L and cash flow data from the borrower's monthly / quarterly financial statement.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Project & Period</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Project <span class="req">*</span></div>
+                    <select class="f-select" id="f_projectId"><option value="">— Select project —</option></select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Period <span class="req">*</span></div>
+                    <input type="month" class="f-input" id="f_period">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Period Type</div>
+                    <select class="f-select" id="f_periodType">
+                      <option>MONTHLY</option><option>QUARTERLY</option><option>ANNUAL</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">P&L (₹ Crore)</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Revenue</div>
+                    <input type="number" class="f-input" id="f_revenue" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0" oninput="calcEBITDA()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cost of Construction</div>
+                    <input type="number" class="f-input" id="f_construction" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0" oninput="calcEBITDA()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Operating Expenses</div>
+                    <input type="number" class="f-input" id="f_opex" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0" oninput="calcEBITDA()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">EBITDA (auto)</div>
+                    <input type="number" class="f-input" id="f_ebitda" readonly style="font-family:var(--font-mono);background:var(--bg-mid);color:var(--cyan)">
+                  </div>
+                </div>
+                <div class="form-grid-3" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Interest Expense</div>
+                    <input type="number" class="f-input" id="f_interest" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0" oninput="calcDSCR()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Principal Repayment</div>
+                    <input type="number" class="f-input" id="f_principal" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0" oninput="calcDSCR()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">DSCR (auto-calculated)</div>
+                    <input type="number" class="f-input" id="f_dscr" readonly style="font-family:var(--font-mono);background:var(--bg-mid);color:var(--cyan)" placeholder="—">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Cash Flow & Escrow</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Net Cash Flow (₹ Cr)</div>
+                    <input type="number" class="f-input" id="f_cashflow" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Cash on Hand (₹ Cr)</div>
+                    <input type="number" class="f-input" id="f_cash" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Escrow Balance (₹ Cr)</div>
+                    <input type="number" class="f-input" id="f_escrowBal" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Collection Efficiency %</div>
+                    <input type="number" class="f-input" id="f_collEff" step="0.1" min="0" max="100" style="font-family:var(--font-mono)" placeholder="e.g. 88">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('financial')">💾 Save Financial Data</button>
+              <button class="btn btn-ghost" onclick="clearForm('financial')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 5: NEW PROJECT
+          ═══════════════════════════════════ -->
+          <div id="tab-newproject" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Add New Project</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Register a new project in the monitoring system. Fill all fields before creating a loan facility.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Project Identity</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Project ID <span class="req">*</span> <span class="hint">— e.g. PRJ031</span></div>
+                    <input type="text" class="f-input" id="np_id" placeholder="PRJ031" style="font-family:var(--font-mono)" oninput="this.value=this.value.toUpperCase()">
+                  </div>
+                  <div class="field-group" style="grid-column:span 2">
+                    <div class="field-label">Project Name <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="np_name" placeholder="e.g. Prestige Sunrise Heights">
+                  </div>
+                </div>
+                <div class="form-grid-3" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Developer <span class="req">*</span></div>
+                    <select class="f-select" id="np_developer"><option value="">— Select developer —</option></select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Project Type <span class="req">*</span></div>
+                    <select class="f-select" id="np_type">
+                      <option>Residential</option><option>Luxury Residential</option>
+                      <option>Ultra Luxury</option><option>Super Premium</option>
+                      <option>Affordable Residential</option><option>Premium Residential</option>
+                      <option>Township</option><option>Mixed Use</option>
+                      <option>Commercial</option><option>Plotted Development</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Total Units <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="np_units" min="1" placeholder="e.g. 450" style="font-family:var(--font-mono)">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Location</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group" style="grid-column:span 2">
+                    <div class="field-label">City <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="np_city" placeholder="e.g. Bengaluru">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">State <span class="req">*</span></div>
+                    <select class="f-select" id="np_state">
+                      <option>Maharashtra</option><option>Karnataka</option><option>Delhi</option>
+                      <option>Haryana</option><option>Uttar Pradesh</option><option>Tamil Nadu</option>
+                      <option>Telangana</option><option>Gujarat</option><option>Rajasthan</option>
+                      <option>West Bengal</option><option>Other</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Micro-Market</div>
+                    <input type="text" class="f-input" id="np_micromarket" placeholder="e.g. Whitefield">
+                  </div>
+                </div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">RERA Number</div>
+                    <input type="text" class="f-input" id="np_rera" placeholder="e.g. P51800047591" style="font-family:var(--font-mono)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">RERA Expiry Date</div>
+                    <input type="date" class="f-input" id="np_reraExpiry">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Timeline</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Launch Date <span class="req">*</span></div>
+                    <input type="date" class="f-input" id="np_launch">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Target Completion <span class="req">*</span></div>
+                    <input type="date" class="f-input" id="np_completion">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Total Project Cost (₹ Cr)</div>
+                    <input type="number" class="f-input" id="np_cost" step="0.1" style="font-family:var(--font-mono)" placeholder="e.g. 320.0">
+                  </div>
+                </div>
+                <div class="field-group" style="margin-top:14px">
+                  <div class="field-label">Project Description</div>
+                  <textarea class="f-textarea" id="np_desc" placeholder="Brief description of the project, location highlights, target customer segment…"></textarea>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('newproject')">➕ Create Project</button>
+              <button class="btn btn-ghost" onclick="clearForm('newproject')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 6: NEW LOAN
+          ═══════════════════════════════════ -->
+          <div id="tab-newloan" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Register New Loan Facility</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Add a new construction finance or project finance facility to the monitoring system.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Loan Identity</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Loan ID <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="l_id" placeholder="LN031" style="font-family:var(--font-mono)" oninput="this.value=this.value.toUpperCase()">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Project <span class="req">*</span></div>
+                    <select class="f-select" id="l_projectId"><option value="">— Select project —</option></select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Developer <span class="req">*</span></div>
+                    <select class="f-select" id="l_developerId"><option value="">— Select developer —</option></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Facility Terms</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Sanctioned Amount (₹ Cr) <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="l_sanctioned" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Disbursed to Date (₹ Cr)</div>
+                    <input type="number" class="f-input" id="l_disbursed" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Interest Rate % p.a. <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="l_rate" step="0.05" style="font-family:var(--font-mono)" placeholder="10.5">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Tenure (Months) <span class="req">*</span></div>
+                    <input type="number" class="f-input" id="l_tenure" style="font-family:var(--font-mono)" placeholder="48">
+                  </div>
+                </div>
+                <div class="form-grid-4" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Loan Type</div>
+                    <select class="f-select" id="l_type">
+                      <option>Construction Finance</option><option>Project Finance</option>
+                      <option>Township Finance</option><option>Mixed Use Finance</option>
+                      <option>NCD</option><option>Mezzanine</option><option>LAP</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Interest Type</div>
+                    <select class="f-select" id="l_interestType">
+                      <option value="FLOATING">Floating (MCLR/Repo linked)</option>
+                      <option value="FIXED">Fixed</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Lender <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="l_lender" placeholder="e.g. HDFC Bank">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Lender Category</div>
+                    <select class="f-select" id="l_lenderCat">
+                      <option>Bank</option><option>NBFC</option><option>AIF</option>
+                      <option>HFC</option><option>NCD</option><option>Private Credit</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-grid-3" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Start Date</div>
+                    <input type="date" class="f-input" id="l_startDate">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">End Date (Maturity)</div>
+                    <input type="date" class="f-input" id="l_endDate">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Moratorium (Months)</div>
+                    <input type="number" class="f-input" id="l_moratorium" min="0" value="0" style="font-family:var(--font-mono)">
+                  </div>
+                </div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Security Type</div>
+                    <select class="f-select" id="l_security">
+                      <option>Mortgage of project land</option><option>Assignment of receivables</option>
+                      <option>Pledge of developer shares</option><option>Escrow mechanism</option>
+                      <option>Combination</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Collateral Value (₹ Cr)</div>
+                    <input type="number" class="f-input" id="l_collateral" step="0.1" style="font-family:var(--font-mono)" placeholder="0.0">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('newloan')">💳 Register Loan Facility</button>
+              <button class="btn btn-ghost" onclick="clearForm('newloan')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 7: DEVELOPER
+          ═══════════════════════════════════ -->
+          <div id="tab-developer" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Add / Update Developer</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Register a new developer or update existing profile for KYC, risk scoring, and sponsor intelligence.</div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Developer Identity</span></div>
+              <div class="panel-body">
+                <div class="form-grid-3">
+                  <div class="field-group">
+                    <div class="field-label">Developer ID <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="d_id" placeholder="DEV011" style="font-family:var(--font-mono)" oninput="this.value=this.value.toUpperCase()">
+                  </div>
+                  <div class="field-group" style="grid-column:span 2">
+                    <div class="field-label">Legal Entity Name <span class="req">*</span></div>
+                    <input type="text" class="f-input" id="d_name" placeholder="e.g. XYZ Developers Pvt. Ltd.">
+                  </div>
+                </div>
+                <div class="form-grid-4" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">HQ City</div>
+                    <input type="text" class="f-input" id="d_hq" placeholder="Mumbai">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Year Founded</div>
+                    <input type="number" class="f-input" id="d_founded" min="1900" max="2024" placeholder="1998" style="font-family:var(--font-mono)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Risk Tier</div>
+                    <select class="f-select" id="d_tier">
+                      <option value="AAA">AAA — Premium</option><option value="AA">AA — Strong</option>
+                      <option value="A">A — Adequate</option><option value="B">B — Moderate</option>
+                      <option value="C">C — Weak</option><option value="D">D — Distressed</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Listed on Exchange?</div>
+                    <select class="f-select" id="d_listed">
+                      <option value="false">No</option><option value="true">Yes (BSE/NSE)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Track Record</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Total Projects</div>
+                    <input type="number" class="f-input" id="d_total" min="0" style="font-family:var(--font-mono)" placeholder="0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Active Projects</div>
+                    <input type="number" class="f-input" id="d_active" min="0" style="font-family:var(--font-mono)" placeholder="0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Past Delays (>90d)</div>
+                    <input type="number" class="f-input" id="d_delays" min="0" style="font-family:var(--font-mono);color:var(--amber)" placeholder="0">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Past Defaults</div>
+                    <input type="number" class="f-input" id="d_defaults" min="0" style="font-family:var(--font-mono);color:var(--red)" placeholder="0">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">Financials & KYC</span></div>
+              <div class="panel-body">
+                <div class="form-grid-4">
+                  <div class="field-group">
+                    <div class="field-label">Net Worth (₹ Cr)</div>
+                    <input type="number" class="f-input" id="d_networth" step="0.1" style="font-family:var(--font-mono)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Annual Turnover (₹ Cr)</div>
+                    <input type="number" class="f-input" id="d_turnover" step="0.1" style="font-family:var(--font-mono)">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">External Credit Rating</div>
+                    <select class="f-select" id="d_rating">
+                      <option value="">Not rated</option><option>CRISIL AAA</option><option>CRISIL AA</option>
+                      <option>CRISIL A</option><option>ICRA AAA</option><option>ICRA AA</option><option>ICRA A</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">PAN Number</div>
+                    <input type="text" class="f-input" id="d_pan" placeholder="AAAAA0000A" style="font-family:var(--font-mono)" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+                  </div>
+                </div>
+                <div class="form-grid-2" style="margin-top:14px">
+                  <div class="field-group">
+                    <div class="field-label">Contact Person</div>
+                    <input type="text" class="f-input" id="d_contact" placeholder="MD / CFO name">
+                  </div>
+                  <div class="field-group">
+                    <div class="field-label">Contact Email</div>
+                    <input type="email" class="f-input" id="d_email" placeholder="contact@developer.com">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-lg" onclick="submitTab('developer')">👤 Save Developer</button>
+              <button class="btn btn-ghost" onclick="clearForm('developer')">Clear</button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════
+               TAB 8: CSV UPLOAD
+          ═══════════════════════════════════ -->
+          <div id="tab-csv" style="display:none">
+            <div style="margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Bulk CSV Upload</div>
+              <div style="font-size:12px;color:var(--text-secondary)">Upload a CSV file to update multiple projects at once. Download the template first to ensure correct column names.</div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">1. Choose Data Type & Download Template</span></div>
+              <div class="panel-body">
+                <div class="form-grid-2" style="margin-bottom:14px">
+                  <div class="field-group">
+                    <div class="field-label">CSV Type <span class="req">*</span></div>
+                    <select class="f-select" id="csv_type" onchange="updateTemplate()">
+                      <option value="monthly">Monthly Project Update</option>
+                      <option value="construction">Construction Progress</option>
+                      <option value="sales">Sales Update</option>
+                      <option value="financial">Financial Statement</option>
+                    </select>
+                  </div>
+                  <div class="field-group" style="justify-content:flex-end">
+                    <div class="field-label">Template</div>
+                    <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top:auto">↓ Download CSV Template</button>
+                  </div>
+                </div>
+                <div id="templatePreview" style="background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);line-height:1.8"></div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-header"><span class="panel-title">2. Upload Your CSV</span></div>
+              <div class="panel-body">
+                <div class="drop-zone" id="csvDropZone"
+                  onclick="document.getElementById('csvFileInput').click()"
+                  ondragover="event.preventDefault();this.classList.add('drag-over')"
+                  ondragleave="this.classList.remove('drag-over')"
+                  ondrop="handleCSVDrop(event)">
+                  <div class="drop-zone-icon">📊</div>
+                  <div class="drop-zone-text">Click to browse or drag & drop your CSV</div>
+                  <div class="drop-zone-sub">Columns must match the template exactly · Max 5MB</div>
+                </div>
+                <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCSVSelect(event)">
+                <div class="upload-progress" id="csvProgress">
+                  <div class="upload-progress-fill" id="csvProgressFill" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="csvPreviewPanel" style="display:none" class="panel" style="margin-bottom:16px">
+              <div class="panel-header">
+                <span class="panel-title">3. Preview & Validate</span>
+                <div class="panel-actions">
+                  <span class="badge green" id="csvValidCount">0 valid</span>
+                  <span class="badge red" id="csvErrorCount" style="margin-left:6px">0 errors</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="csv-preview" id="csvPreviewTable"></div>
+              </div>
+            </div>
+
+            <div id="csvActions" style="display:none;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-lg" onclick="processCSV()">⚡ Import All Valid Rows</button>
+              <button class="btn btn-secondary" onclick="clearCSV()">Clear</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LIVE SCORE PREVIEW (right side) -->
+        <div style="width:260px;flex-shrink:0" class="entry-preview">
+          <div class="live-preview" id="livePreview">
+            <div class="preview-title">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--cyan);display:inline-block;animation:pulse-dot 2s infinite"></span>
+              Live Risk Preview
+            </div>
+            <div style="color:var(--text-muted);font-size:11px;text-align:center;padding:20px 0">
+              Fill in metrics to see live risk score
+            </div>
+          </div>
+
+          <!-- Recent saves -->
+          <div style="margin-top:16px">
+            <div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:10px">Recent Saves</div>
+            <div id="recentSaves">
+              <div style="font-size:11px;color:var(--text-muted)">No saves yet this session</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="data/seed-data.js"></script>
+<script src="js/config.js" onerror="void(0)"></script>
+<script src="js/scoring-engine.js"></script>
+<script>
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const projects   = NEXUS_DATA.projects;
+const developers = NEXUS_DATA.developers;
+const loans      = NEXUS_DATA.loans;
+const CFG        = window.__NEXUS_CONFIG?.thresholds || {};
+
+function $ (id) { return document.getElementById(id); }
+function fmtCr(v) { return v >= 1e10 ? `₹${(v/1e10).toFixed(1)}Bn` : v >= 1e7 ? `₹${(v/1e7).toFixed(1)}Cr` : `₹${v.toLocaleString()}`; }
+function today()  { return new Date().toISOString().split('T')[0]; }
+function thisMonth(){ return new Date().toISOString().slice(0,7); }
+
+// ── Populate selects ─────────────────────────────────────────────────────────
+['m_projectId','c_projectId','s_projectId','f_projectId','l_projectId'].forEach(id => {
+  const el = $(id); if (!el) return;
+  projects.forEach(p => el.innerHTML += `<option value="${p.id}">${p.id} · ${p.name}</option>`);
+});
+['np_developer','l_developerId','d_id'].forEach(id => {
+  const el = $(id); if (!el) return;
+  developers.forEach(d => el.innerHTML += `<option value="${d.id}">${d.name}</option>`);
+});
+
+// Set default dates
+$('m_period').value       = thisMonth();
+$('c_updateDate').value   = today();
+$('s_month').value        = thisMonth();
+$('f_period').value       = thisMonth();
+$('l_startDate').value    = today();
+const future = new Date(); future.setFullYear(future.getFullYear()+4);
+$('l_endDate').value      = future.toISOString().split('T')[0];
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.entry-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['monthly','construction','sales','financial','newproject','newloan','developer','csv'].forEach(t => {
+    $('tab-'+t).style.display = t === tab ? 'block' : 'none';
+  });
+  updateTemplate();
+}
+
+// ── Range / number sync ───────────────────────────────────────────────────────
+function syncRange(rangeId, valId, suffix) {
+  $(valId).textContent = $(rangeId).value + (suffix||'');
+}
+function syncNumToRange(numId, rangeId, valId, suffix) {
+  const v = parseFloat($(numId).value);
+  if (!isNaN(v)) { $(rangeId).value = v; $(valId).textContent = v.toFixed(1) + (suffix||''); }
+}
+
+// ── Project select → prefill ──────────────────────────────────────────────────
+function onProjectSelect(prefix) {
+  const pid = $(prefix + '_projectId').value;
+  const p   = projects.find(x => x.id === pid);
+  if (!p) return;
+
+  if (prefix === 'm') {
+    $('m_constProgress').value    = p.constructionProgress;
+    $('m_constProgressVal').textContent = p.constructionProgress + '%';
+    $('m_constProgressNum').value = p.constructionProgress;
+    $('m_schedProgress').value    = p.scheduledProgress;
+    $('m_schedProgressVal').textContent = p.scheduledProgress + '%';
+    $('m_schedProgressNum').value = p.scheduledProgress;
+    $('m_dscr').value             = p.dscr;
+    $('m_ltv').value              = p.ltv;
+    $('m_ltc').value              = p.ltc;
+    $('m_costOverrun').value      = p.costOverrun;
+    $('m_escrowBalance').value    = (p.escrowBalance / 1e7).toFixed(1);
+    $('m_escrowRequired').value   = (p.escrowRequired / 1e7).toFixed(1);
+    $('m_cumulativeSold').value   = p.unitsSold;
+    $('m_unitsSoldMonth').value   = p.salesVelocity;
+
+    const loan = loans.find(l => l.id === p.loanId);
+    $('m_projectInfo').style.display = 'block';
+    $('m_projectInfo').innerHTML = `
+      <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:11px">
+        <div><span style="color:var(--text-muted)">Developer: </span><strong>${developers.find(d=>d.id===p.developerId)?.name||'—'}</strong></div>
+        <div><span style="color:var(--text-muted)">City: </span><strong>${p.city}</strong></div>
+        <div><span style="color:var(--text-muted)">Units: </span><strong>${p.unitsSold}/${p.totalUnits} sold</strong></div>
+        <div><span style="color:var(--text-muted)">Current Score: </span><strong style="color:${RiskEngine.getScoreColor(p.riskScore)}">${p.riskScore}</strong></div>
+        <div><span style="color:var(--text-muted)">Status: </span><span class="badge ${p.alertLevel.toLowerCase()}">${p.alertLevel}</span></div>
+        <div><span style="color:var(--text-muted)">Loan: </span><strong>${loan ? loan.lender + ' · ' + fmtCr(loan.outstandingAmount) : '—'}</strong></div>
+      </div>`;
+    liveScore();
+  }
+
+  if (prefix === 's') {
+    $('s_target').value       = p.salesTarget;
+    $('s_sold').value         = p.salesVelocity;
+    $('s_cumulative').value   = p.unitsSold;
+    calcNetSales();
+  }
+
+  if (prefix === 'c') {
+    $('c_actual').value   = p.constructionProgress;
+    $('c_actualVal').textContent   = p.constructionProgress + '%';
+    $('c_scheduled').value = p.scheduledProgress;
+    $('c_scheduledVal').textContent = p.scheduledProgress + '%';
+  }
+}
+
+// ── Derived calcs ──────────────────────────────────────────────────────────────
+function calcNetSales() {
+  const sold   = parseInt($('s_sold').value)   || 0;
+  const cancel = parseInt($('s_cancel').value) || 0;
+  $('s_netSales').value = Math.max(0, sold - cancel);
+}
+
+function calcEBITDA() {
+  const rev    = parseFloat($('f_revenue').value)      || 0;
+  const con    = parseFloat($('f_construction').value) || 0;
+  const opex   = parseFloat($('f_opex').value)         || 0;
+  $('f_ebitda').value = (rev - con - opex).toFixed(2);
+  calcDSCR();
+}
+
+function calcDSCR() {
+  const ebitda   = parseFloat($('f_ebitda').value)    || 0;
+  const interest = parseFloat($('f_interest').value)  || 0;
+  const principal= parseFloat($('f_principal').value) || 0;
+  const ds = interest + principal;
+  if (ds > 0) {
+    const dscr = (ebitda / ds).toFixed(2);
+    $('f_dscr').value = dscr;
+    $('f_dscr').style.color = parseFloat(dscr) >= 1.25 ? 'var(--green)' : parseFloat(dscr) >= 1.0 ? 'var(--amber)' : 'var(--red)';
+  }
+}
+
+function calcCostOverrun() {
+  const actual   = parseFloat($('m_costToDate').value)       || 0;
+  const approved = parseFloat($('m_approvedBudget').value)   || 0;
+  if (approved > 0 && actual > 0) {
+    const overrun = ((actual - approved) / approved * 100).toFixed(1);
+    const el = $('costOverrunDisplay');
+    el.style.display = 'block';
+    const pct = parseFloat(overrun);
+    el.style.background = pct > 20 ? 'var(--red-bg)' : pct > 10 ? 'var(--amber-bg)' : 'var(--green-bg)';
+    el.style.border = `1px solid ${pct > 20 ? 'rgba(255,51,85,0.2)' : pct > 10 ? 'rgba(255,170,0,0.2)' : 'rgba(0,255,136,0.2)'}`;
+    el.style.color = pct > 20 ? 'var(--red)' : pct > 10 ? 'var(--amber)' : 'var(--green)';
+    el.textContent = `Cost Overrun: ${overrun}% ${pct > 20 ? '⚠ RED ALERT THRESHOLD BREACHED' : pct > 10 ? '⚠ AMBER WATCH' : '✓ Within limits'}`;
+    $('m_costOverrun').value = overrun;
+    liveScore();
+  }
+}
+
+// ── Live risk preview ─────────────────────────────────────────────────────────
+function liveScore() {
+  const pid = $('m_projectId').value;
+  if (!pid) return;
+  const base = projects.find(p => p.id === pid);
+  if (!base) return;
+
+  const updated = {
+    ...base,
+    constructionProgress: parseFloat($('m_constProgressNum').value || $('m_constProgress').value) || base.constructionProgress,
+    scheduledProgress:    parseFloat($('m_schedProgressNum').value  || $('m_schedProgress').value)  || base.scheduledProgress,
+    dscr:         parseFloat($('m_dscr').value)         || base.dscr,
+    ltv:          parseFloat($('m_ltv').value)          || base.ltv,
+    ltc:          parseFloat($('m_ltc').value)          || base.ltc,
+    costOverrun:  parseFloat($('m_costOverrun').value)  || base.costOverrun,
+    salesVelocity:parseInt($('m_unitsSoldMonth').value) || base.salesVelocity,
+    escrowBalance: (parseFloat($('m_escrowBalance').value) || base.escrowBalance/1e7) * 1e7,
+    escrowRequired:(parseFloat($('m_escrowRequired').value)||base.escrowRequired/1e7)* 1e7,
+  };
+
+  const dev   = developers.find(d => d.id === base.developerId);
+  const loan  = loans.find(l => l.id === base.loanId);
+  const score = RiskEngine.computeScore(updated, dev, loan, NEXUS_DATA.marketData);
+  const color = RiskEngine.getScoreColor(score.totalScore);
+  const delta = score.totalScore - base.riskScore;
+
+  // Escrow warning
+  const escrowBal = parseFloat($('m_escrowBalance').value) * 1e7 || base.escrowBalance;
+  const escrowReq = parseFloat($('m_escrowRequired').value) * 1e7 || base.escrowRequired;
+  const escrowRatio = escrowBal / escrowReq;
+  const ewEl = $('escrowWarning');
+  if (escrowRatio < 0.85 && escrowReq > 0) {
+    ewEl.style.display = 'block';
+    ewEl.innerHTML = `<div style="padding:8px 12px;background:${escrowRatio<0.5?'var(--red-bg)':'var(--amber-bg)'};border:1px solid ${escrowRatio<0.5?'rgba(255,51,85,0.2)':'rgba(255,170,0,0.2)'};border-radius:var(--radius);font-size:11px;color:${escrowRatio<0.5?'var(--red)':'var(--amber)'}">
+      ⚠ Escrow coverage ${(escrowRatio*100).toFixed(0)}% — ${escrowRatio<0.5?'RED ALERT: Below 50%':'AMBER: Below 85% threshold'}. Deficit: ₹${((escrowReq-escrowBal)/1e7).toFixed(1)}Cr
+    </div>`;
+  } else { ewEl.style.display = 'none'; }
+
+  // Update preview panel
+  $('livePreview').innerHTML = `
+    <div class="preview-title">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--cyan);display:inline-block;animation:pulse-dot 2s infinite"></span>
+      Live Risk Preview
+    </div>
+    <div class="preview-score-wrap">
+      <div>
+        <div class="preview-score-num" style="color:${color}">${score.totalScore}</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">OUT OF 100</div>
+      </div>
+      <div>
+        <span class="badge ${score.alertLevel.toLowerCase()}">${score.alertLevel}</span>
+        <div style="font-size:10px;margin-top:6px;font-family:var(--font-mono);color:${delta>=0?'var(--green)':'var(--red)'}">
+          ${delta>=0?'▲':'▼'} ${Math.abs(delta)} pts vs current
+        </div>
+      </div>
+    </div>
+    ${Object.entries(score.components).map(([k,v]) => {
+      const labels = {financialHealth:'Financial',constructionProgress:'Construction',salesVelocity:'Sales',cashFlowAdequacy:'Cash Flow',sponsorRisk:'Sponsor',marketConditions:'Market',capitalStackStability:'Capital Stack',regulatoryRisk:'Regulatory'};
+      const c = v>=70?'var(--green)':v>=45?'var(--amber)':'var(--red)';
+      return `<div class="preview-metric"><span class="pk">${labels[k]}</span><span class="pv" style="color:${c}">${Math.round(v)}</span></div>`;
+    }).join('')}
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
+      ${RiskEngine.detectAlerts(updated,dev,loan).length > 0
+        ? `⚠ ${RiskEngine.detectAlerts(updated,dev,loan).length} alert(s) detected`
+        : '✓ No alerts detected'}
+    </div>
+  `;
+}
+
+// ── Submit handlers ───────────────────────────────────────────────────────────
+const recentSavesList = [];
+
+function submitMonthly() {
+  const pid = $('m_projectId').value;
+  if (!pid) { showToast('error','⚠ Please select a project'); return; }
+  if (!$('m_dscr').value || !$('m_ltv').value) { showToast('error','⚠ DSCR and LTV are required'); return; }
+
+  // In live mode: would call NexusDB.updateProject(pid, {...})
+  const proj = projects.find(p => p.id === pid);
+  if (proj) {
+    proj.constructionProgress = parseFloat($('m_constProgressNum').value || $('m_constProgress').value) || proj.constructionProgress;
+    proj.scheduledProgress    = parseFloat($('m_schedProgressNum').value || $('m_schedProgress').value)  || proj.scheduledProgress;
+    proj.dscr         = parseFloat($('m_dscr').value)        || proj.dscr;
+    proj.ltv          = parseFloat($('m_ltv').value)         || proj.ltv;
+    proj.ltc          = parseFloat($('m_ltc').value)         || proj.ltc;
+    proj.costOverrun  = parseFloat($('m_costOverrun').value) || proj.costOverrun;
+    proj.salesVelocity= parseInt($('m_unitsSoldMonth').value) || proj.salesVelocity;
+    if ($('m_cumulativeSold').value) proj.unitsSold = parseInt($('m_cumulativeSold').value);
+    const eb = parseFloat($('m_escrowBalance').value);
+    const er = parseFloat($('m_escrowRequired').value);
+    if (eb) proj.escrowBalance  = eb * 1e7;
+    if (er) proj.escrowRequired = er * 1e7;
+    const newScore = RiskEngine.computeScore(proj, developers.find(d=>d.id===proj.developerId), loans.find(l=>l.id===proj.loanId), NEXUS_DATA.marketData);
+    proj.riskScore  = newScore.totalScore;
+    proj.alertLevel = newScore.alertLevel;
+    proj._scoreResult = newScore;
+  }
+
+  addRecentSave(pid, proj?.name, 'Monthly Update');
+  showToast('success', `✓ ${proj?.name} updated — Score: ${proj?.riskScore} (${proj?.alertLevel})`);
+  saveDraft('monthly');
+}
+
+function submitTab(tab) {
+  const names = {construction:'Construction Update',sales:'Sales Update',financial:'Financial Data',newproject:'Project',newloan:'Loan Facility',developer:'Developer'};
+  showToast('success', `✓ ${names[tab]} saved successfully`);
+  addRecentSave('—', names[tab], tab);
+}
+
+function addRecentSave(id, name, type) {
+  recentSavesList.unshift({ id, name: name||id, type, time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) });
+  if (recentSavesList.length > 5) recentSavesList.pop();
+  $('recentSaves').innerHTML = recentSavesList.map(s => `
+    <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:11px">
+      <div style="font-weight:500">${s.name}</div>
+      <div style="color:var(--text-muted);font-size:9px;font-family:var(--font-mono)">${s.type} · ${s.time}</div>
+    </div>`).join('');
+}
+
+function saveDraft(tab) {
+  const key = 'nexus_draft_' + tab;
+  const data = {};
+  document.querySelectorAll(`#tab-${tab} input, #tab-${tab} select, #tab-${tab} textarea`).forEach(el => {
+    if (el.id) data[el.id] = el.value;
+  });
+  localStorage.setItem(key, JSON.stringify(data));
+  $('autoSaveLabel').textContent = 'Draft saved ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  setTimeout(() => { $('autoSaveLabel').textContent = ''; }, 3000);
+}
+
+function clearForm(tab) {
+  document.querySelectorAll(`#tab-${tab} input:not([readonly]), #tab-${tab} select, #tab-${tab} textarea`).forEach(el => {
+    if (el.type === 'range') { el.value = 0; } else { el.value = ''; }
+  });
+  $('livePreview').innerHTML = `<div class="preview-title"><span style="width:8px;height:8px;border-radius:50%;background:var(--cyan);display:inline-block;animation:pulse-dot 2s infinite"></span>Live Risk Preview</div><div style="color:var(--text-muted);font-size:11px;text-align:center;padding:20px 0">Fill in metrics to see live risk score</div>`;
+}
+
+// ── Draft restore ─────────────────────────────────────────────────────────────
+function restoreDraft(tab) {
+  const saved = localStorage.getItem('nexus_draft_' + tab);
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    Object.entries(data).forEach(([id, val]) => { const el = $(id); if (el && !el.readOnly) el.value = val; });
+  } catch(e) {}
+}
+restoreDraft('monthly');
+
+// Auto-save every 60s
+setInterval(() => {
+  const activeTab = document.querySelector('.entry-tab.active')?.dataset?.tab;
+  if (activeTab) saveDraft(activeTab);
+}, 60000);
+
+// ── CSV logic ─────────────────────────────────────────────────────────────────
+const CSV_TEMPLATES = {
+  monthly:      'project_id,period,construction_progress,scheduled_progress,units_sold_month,cumulative_sold,dscr,ltv,ltc,cost_overrun,escrow_balance_cr,escrow_required_cr,notes\nPRJ001,2024-11,78,75,22,318,1.42,62,68,4.2,28.5,24.0,On track',
+  construction: 'project_id,update_date,actual_progress,scheduled_progress,cost_to_date_cr,approved_cost_cr,milestone,revised_completion,delay_reason\nPRJ001,2024-11-15,78,75,245.5,220.0,Structure complete 18F,,',
+  sales:        'project_id,update_month,units_sold_month,cancellations,cumulative_sold,monthly_target,avg_price_psf,collections_cr\nPRJ001,2024-11,22,1,318,20,12500,18.5',
+  financial:    'project_id,period,period_type,revenue_cr,cost_of_construction_cr,operating_expenses_cr,interest_expense_cr,principal_repayment_cr,escrow_balance_cr,collection_efficiency_pct\nPRJ001,2024-11,MONTHLY,42.0,18.5,6.2,4.8,3.2,28.5,88'
+};
+
+function updateTemplate() {
+  const type = $('csv_type').value;
+  const header = CSV_TEMPLATES[type].split('\n')[0];
+  $('templatePreview').innerHTML = `<div style="color:var(--cyan);margin-bottom:4px">Columns required:</div>${header.split(',').map((c,i) => `<span style="color:var(--text-secondary)">${i+1}. ${c}</span>`).join(' &nbsp;·&nbsp; ')}`;
+}
+updateTemplate();
+
+function downloadTemplate() {
+  const type = $('csv_type').value;
+  const csv  = CSV_TEMPLATES[type];
+  const a    = document.createElement('a');
+  a.href     = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = `NEXUS_Template_${type}_${today()}.csv`;
+  a.click();
+  showToast('info', '↓ Template downloaded');
+}
+
+function handleCSVDrop(e) {
+  e.preventDefault();
+  $('csvDropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) parseCSV(file);
+  else showToast('error','⚠ Please upload a .csv file');
+}
+
+function handleCSVSelect(e) {
+  const file = e.target.files[0];
+  if (file) parseCSV(file);
+}
+
+let parsedCSVRows = [];
+
+function parseCSV(file) {
+  const prog = $('csvProgress');
+  prog.style.display = 'block';
+  $('csvProgressFill').style.width = '30%';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    $('csvProgressFill').style.width = '70%';
+    const lines  = e.target.result.split('\n').filter(l => l.trim());
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const type   = $('csv_type').value;
+    const templateHeader = CSV_TEMPLATES[type].split('\n')[0].split(',').map(h => h.trim().toLowerCase());
+
+    // Validate columns
+    const missingCols = templateHeader.filter(c => !header.includes(c));
+    if (missingCols.length > 0) {
+      showToast('error', `⚠ Missing columns: ${missingCols.join(', ')}`);
+      $('csvProgressFill').style.width = '0%';
+      return;
+    }
+
+    parsedCSVRows = lines.slice(1).map((line, idx) => {
+      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g,''));
+      const row  = {};
+      header.forEach((h, i) => row[h] = vals[i]);
+      const pid   = row['project_id'];
+      const exists = NEXUS_DATA.projects.find(p => p.id === pid);
+      row._valid = !!pid;
+      row._error = !pid ? 'Missing project_id' : !exists ? `Project ${pid} not found` : null;
+      row._rowNum = idx + 2;
+      return row;
+    }).filter(r => Object.values(r).some(v => v && v !== 'undefined'));
+
+    const valid  = parsedCSVRows.filter(r => !r._error).length;
+    const errors = parsedCSVRows.filter(r => r._error).length;
+
+    $('csvValidCount').textContent  = `${valid} valid`;
+    $('csvErrorCount').textContent  = `${errors} errors`;
+    $('csvProgressFill').style.width = '100%';
+    setTimeout(() => prog.style.display = 'none', 800);
+
+    // Build preview table
+    const previewCols = header.filter(h => !h.startsWith('_')).slice(0, 8);
+    $('csvPreviewTable').innerHTML = `
+      <table>
+        <thead><tr><th>Row</th>${previewCols.map(c=>`<th>${c}</th>`).join('')}<th>Status</th></tr></thead>
+        <tbody>${parsedCSVRows.slice(0,20).map(r => `
+          <tr class="${r._error ? 'csv-error-row' : ''}">
+            <td>${r._rowNum}</td>
+            ${previewCols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}
+            <td>${r._error ? `❌ ${r._error}` : '✓'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    $('csvPreviewPanel').style.display = 'block';
+    $('csvActions').style.display = 'flex';
+    showToast(errors>0?'info':'success', `Parsed ${parsedCSVRows.length} rows: ${valid} valid, ${errors} errors`);
+  };
+  reader.readAsText(file);
+}
+
+function processCSV() {
+  const valid = parsedCSVRows.filter(r => !r._error);
+  if (valid.length === 0) { showToast('error','No valid rows to import'); return; }
+  const type = $('csv_type').value;
+
+  valid.forEach(row => {
+    const p = NEXUS_DATA.projects.find(x => x.id === row['project_id']);
+    if (!p) return;
+    if (type === 'monthly') {
+      if (row['construction_progress']) p.constructionProgress = parseFloat(row['construction_progress']);
+      if (row['scheduled_progress'])    p.scheduledProgress    = parseFloat(row['scheduled_progress']);
+      if (row['dscr'])          p.dscr         = parseFloat(row['dscr']);
+      if (row['ltv'])           p.ltv          = parseFloat(row['ltv']);
+      if (row['ltc'])           p.ltc          = parseFloat(row['ltc']);
+      if (row['cost_overrun'])  p.costOverrun  = parseFloat(row['cost_overrun']);
+      if (row['units_sold_month']) p.salesVelocity = parseInt(row['units_sold_month']);
+      if (row['cumulative_sold'])  p.unitsSold     = parseInt(row['cumulative_sold']);
+      if (row['escrow_balance_cr'])  p.escrowBalance  = parseFloat(row['escrow_balance_cr']) * 1e7;
+      if (row['escrow_required_cr']) p.escrowRequired = parseFloat(row['escrow_required_cr']) * 1e7;
+      const dev   = developers.find(d => d.id === p.developerId);
+      const loan  = loans.find(l => l.id === p.loanId);
+      const score = RiskEngine.computeScore(p, dev, loan, NEXUS_DATA.marketData);
+      p.riskScore  = score.totalScore;
+      p.alertLevel = score.alertLevel;
+      p._scoreResult = score;
+    }
+  });
+
+  showToast('success', `✓ Imported ${valid.length} rows. Dashboard data updated.`);
+  clearCSV();
+}
+
+function clearCSV() {
+  parsedCSVRows = [];
+  $('csvPreviewPanel').style.display = 'none';
+  $('csvActions').style.display = 'none';
+  $('csvDropZone').innerHTML = `<div class="drop-zone-icon">📊</div><div class="drop-zone-text">Click to browse or drag & drop your CSV</div><div class="drop-zone-sub">Columns must match the template exactly · Max 5MB</div>`;
+  $('csvFileInput').value = '';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(type, msg) {
+  const el = $('toast');
+  el.className = `toast ${type} show`;
+  el.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+$('sidebar').innerHTML = `
+<div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">◈</div><div><div>NEXUS ASIA</div><div class="logo-sub">Credit Intelligence</div></div></div></div>
+<nav class="sidebar-nav">
+  <div class="nav-section-label">Terminal</div>
+  <a class="nav-item" href="index.html"><span class="nav-icon">⬡</span><span>Portfolio</span></a>
+  <a class="nav-item" href="index.html"><span class="nav-icon">◫</span><span>Projects</span></a>
+  <a class="nav-item" href="index.html"><span class="nav-icon">⚠</span><span>Alerts</span></a>
+  <div class="nav-section-label">Risk Tools</div>
+  <a class="nav-item" href="covenants.html"><span class="nav-icon">📋</span><span>Covenants</span></a>
+  <a class="nav-item" href="waterfall.html"><span class="nav-icon">⧫</span><span>Capital Stack</span></a>
+  <a class="nav-item" href="stress.html"><span class="nav-icon">⚡</span><span>Stress Test</span></a>
+  <a class="nav-item" href="schedule.html"><span class="nav-icon">📅</span><span>Repayment</span></a>
+  <div class="nav-section-label">Operations</div>
+  <a class="nav-item active" href="entry.html"><span class="nav-icon">✏️</span><span>Data Entry</span></a>
+  <a class="nav-item" href="vault.html"><span class="nav-icon">🗄</span><span>Doc Vault</span></a>
+  <a class="nav-item" href="audit.html"><span class="nav-icon">🔍</span><span>Audit Trail</span></a>
+  <a class="nav-item" href="reports.html"><span class="nav-icon">⊟</span><span>Reports</span></a>
+  <a class="nav-item" href="schema.html"><span class="nav-icon">⊞</span><span>DB Schema</span></a>
+  <a class="nav-item" href="deploy.html"><span class="nav-icon">🚀</span><span>Deploy Guide</span></a>
+</nav>
+<div class="sidebar-footer"><div class="status-ticker"><div class="status-dot"></div><span id="sc">--:--</span></div></div>`;
+setInterval(() => document.getElementById('sc').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}), 1000);
+</script>
+</body>
+</html>
