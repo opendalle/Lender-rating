@@ -413,3 +413,58 @@ const NEXUS_DATA = {
 
 // Export for use in modules
 if (typeof module !== 'undefined') module.exports = NEXUS_DATA;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEED DATA PATCH — additional fields required by scoring-engine.js v2.0
+// For projects missing these fields, all 8 formulas degrade gracefully to N/A.
+// In production these come from the monthly-update form (monthly-update.html).
+//
+// New fields per project:
+//   gdv             — Gross Development Value (₹) = total sales revenue if 100% sold at launch price
+//   avgUnitPrice    — ₹ per unit (derived from gdv/totalUnits if not supplied)
+//   actualCollections — ₹ collected from buyers this month
+//   escrowPrev      — Escrow balance last month (for escrow velocity)
+//   ebitda          — Project EBITDA (₹/year) for ICR
+//   costToComplete  — Remaining construction cost (₹)
+//   distressHaircut — Override default 0.65 if asset class warrants different
+// ─────────────────────────────────────────────────────────────────────────────
+const NEXUS_PATCH = {
+  PRJ001: { gdv: 3780000000, avgUnitPrice: 9000000, actualCollections: 87000000,  escrowPrev: 268000000, ebitda: 189000000, costToComplete: 620000000 },
+  PRJ002: { gdv: 8400000000, avgUnitPrice:30000000, actualCollections: 112000000, escrowPrev: 198000000, ebitda: 245000000, costToComplete: 180000000 },
+  PRJ003: { gdv: 3960000000, avgUnitPrice:22000000, actualCollections: 96000000,  escrowPrev: 308000000, ebitda: 182000000, costToComplete: 480000000 },
+  PRJ004: { gdv:14400000000, avgUnitPrice:40000000, actualCollections:218000000,  escrowPrev: 640000000, ebitda: 436000000, costToComplete:1320000000 },
+  PRJ005: { gdv: 5280000000, avgUnitPrice:24000000, actualCollections:  9000000,  escrowPrev:  62000000, ebitda:  12000000, costToComplete:1380000000 },
+  PRJ006: { gdv: 4800000000, avgUnitPrice: 4000000, actualCollections:128000000,  escrowPrev: 490000000, ebitda: 310000000, costToComplete:  80000000 },
+  PRJ007: { gdv:27000000000, avgUnitPrice:60000000, actualCollections: 88000000,  escrowPrev: 448000000, ebitda: 348000000, costToComplete: 420000000 },
+  PRJ008: { gdv: 9600000000, avgUnitPrice: 4000000, actualCollections:108000000,  escrowPrev: 398000000, ebitda: 164000000, costToComplete: 720000000 },
+  PRJ009: { gdv: 8700000000, avgUnitPrice:15000000, actualCollections:138000000,  escrowPrev: 268000000, ebitda: 238000000, costToComplete:1120000000 },
+  PRJ010: { gdv: 8960000000, avgUnitPrice: 2800000, actualCollections:  1000000,  escrowPrev:   9000000, ebitda: -28000000, costToComplete:1960000000 },
+  PRJ011: { gdv: 9100000000, avgUnitPrice:14000000, actualCollections:148000000,  escrowPrev: 384000000, ebitda: 228000000, costToComplete:1480000000 },
+  PRJ012: { gdv:33600000000, avgUnitPrice:30000000, actualCollections:428000000,  escrowPrev: 880000000, ebitda: 368000000, costToComplete:4380000000 },
+  PRJ013: { gdv:24000000000, avgUnitPrice: 3000000, actualCollections:328000000,  escrowPrev:1860000000, ebitda: 768000000, costToComplete:2480000000 },
+  PRJ014: { gdv:17500000000, avgUnitPrice: 5000000, actualCollections:258000000,  escrowPrev: 688000000, ebitda: 468000000, costToComplete:1620000000 },
+  PRJ015: { gdv: 8800000000, avgUnitPrice:80000000, actualCollections: 12000000,  escrowPrev:  38000000, ebitda:  -8000000, costToComplete: 680000000 },
+  PRJ016: { gdv: 6400000000, avgUnitPrice:20000000, actualCollections: 88000000,  escrowPrev: 248000000, ebitda: 188000000, costToComplete:1080000000 },
+  PRJ017: { gdv:12300000000, avgUnitPrice:15000000, actualCollections:218000000,  escrowPrev: 458000000, ebitda: 368000000, costToComplete: 680000000 },
+  PRJ018: { gdv: 9600000000, avgUnitPrice:20000000, actualCollections: 98000000,  escrowPrev: 238000000, ebitda: 168000000, costToComplete: 520000000 },
+  PRJ019: { gdv:19200000000, avgUnitPrice:12000000, actualCollections:168000000,  escrowPrev: 448000000, ebitda: 388000000, costToComplete: 480000000 },
+  PRJ020: { gdv:13200000000, avgUnitPrice:150000000,actualCollections:128000000,  escrowPrev: 548000000, ebitda: 368000000, costToComplete:1320000000 },
+  PRJ021: { gdv: 9840000000, avgUnitPrice:12000000, actualCollections:158000000,  escrowPrev: 358000000, ebitda: 238000000, costToComplete:1360000000 },
+  PRJ022: { gdv:10200000000, avgUnitPrice:15000000, actualCollections:168000000,  escrowPrev: 288000000, ebitda: 218000000, costToComplete:1080000000 },
+  PRJ023: { gdv: 3600000000, avgUnitPrice: 2000000, actualCollections:   800000,  escrowPrev:   3000000, ebitda: -48000000, costToComplete:1180000000 },
+  PRJ024: { gdv: 7200000000, avgUnitPrice: 4000000, actualCollections:178000000,  escrowPrev: 418000000, ebitda: 248000000, costToComplete: 480000000 },
+  PRJ025: { gdv: 3200000000, avgUnitPrice: 4000000, actualCollections:128000000,  escrowPrev: 298000000, ebitda: 208000000, costToComplete: 540000000 },
+  PRJ026: { gdv: 5200000000, avgUnitPrice:20000000, actualCollections: 88000000,  escrowPrev: 196000000, ebitda: 168000000, costToComplete: 448000000 },
+  PRJ027: { gdv:22000000000, avgUnitPrice:20000000, actualCollections:268000000,  escrowPrev: 588000000, ebitda: 328000000, costToComplete:3380000000 },
+  PRJ028: { gdv:14250000000, avgUnitPrice:15000000, actualCollections:128000000,  escrowPrev: 348000000, ebitda: 148000000, costToComplete:1320000000 },
+  PRJ029: { gdv:14400000000, avgUnitPrice:12000000, actualCollections:108000000,  escrowPrev: 368000000, ebitda: 168000000, costToComplete:1140000000 },
+  PRJ030: { gdv:12000000000, avgUnitPrice:50000000, actualCollections: 98000000,  escrowPrev: 358000000, ebitda: 248000000, costToComplete:1380000000 }
+};
+
+// Merge patch into NEXUS_DATA.projects at runtime
+if (typeof NEXUS_DATA !== 'undefined') {
+  NEXUS_DATA.projects = NEXUS_DATA.projects.map(p => ({
+    ...p,
+    ...(NEXUS_PATCH[p.id] || {})
+  }));
+}
