@@ -9,8 +9,8 @@
 // For production: move keys to Supabase Edge Function env vars.
 // ─────────────────────────────────────────────────────────────────────────────
 
-window.__NEXUS_SUPABASE_URL  = 'https://rdtvffhfmgzwmqvgvpcb.supabase.co';
-window.__NEXUS_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkdHZmZmhmbWd6d21xdmd2cGNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjQ1ODEsImV4cCI6MjA4OTE0MDU4MX0.vdT4TUhrKtzx1aPzM73GaqqDEmyTdjyXv62IFE4sypA';
+window.__NEXUS_SUPABASE_URL  = 'https://hnfxswglldlzfrcjnzmv.supabase.co';
+window.__NEXUS_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuZnhzd2dsbGRsemZyY2puem12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NzU5MTcsImV4cCI6MjA4OTE1MTkxN30.f0wTkoTiUdNfs9V2Wc5vwi4yT9oMuonSF0P4gOFbCv0';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FUND CONFIGURATION
