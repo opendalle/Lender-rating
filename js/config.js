@@ -9,8 +9,8 @@
 // For production: move keys to Supabase Edge Function env vars.
 // ─────────────────────────────────────────────────────────────────────────────
 
-window.__NEXUS_SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
-window.__NEXUS_SUPABASE_ANON = 'YOUR_ANON_PUBLIC_KEY_HERE';
+window.__NEXUS_SUPABASE_URL  = 'https://rdtvffhfmgzwmqvgvpcb.supabase.co';
+window.__NEXUS_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkdHZmZmhmbWd6d21xdmd2cGNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjQ1ODEsImV4cCI6MjA4OTE0MDU4MX0.vdT4TUhrKtzx1aPzM73GaqqDEmyTdjyXv62IFE4sypA';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FUND CONFIGURATION
